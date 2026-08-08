@@ -1,0 +1,197 @@
+{
+  "employees": [
+    {
+      "id": 1,
+      "nombre": "Carlos Mendoza",
+      "dni": "74839201",
+      "correo": "carlos.mendoza@empresa.com",
+      "celular": "912345678",
+      "puesto": "Ingeniero de Software",
+      "departamento": "OPERACIONES",
+      "ruta": "Ruta Norte",
+      "genero": "Masculino",
+      "nacionalidad": "Peruana",
+      "fechaNacimiento": "1992-06-15",
+      "direccion": "Av. Javier Prado Este 2450, San Borja, Lima",
+      "distrito": "San Borja",
+      "provincia": "Lima",
+      "departamentoResidencia": "Lima",
+      "contactoEmergencia": "María Mendoza (Esposa) - 987654321",
+      "foto": null,
+      "estado": "Activo",
+      "motivoCese": "",
+      "comentarioCese": "",
+      "fechaInicioContrato": "2024-02-01",
+      "fechaFinContrato": "",
+      "esIndeterminado": true,
+      "remuneracion": 3500,
+      "renovaciones": [],
+      "historialRemuneraciones": [
+        {
+          "id": 1001,
+          "fecha": "2024-02-01",
+          "monto": 3500,
+          "motivo": "Remuneración inicial de contrato",
+          "renovacionId": null
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "nombre": "Ana María Torres",
+      "dni": "45920183",
+      "correo": "ana.torres@empresa.com",
+      "celular": "923456789",
+      "puesto": "Especialista de RRHH",
+      "departamento": "RRHH",
+      "ruta": "Ruta Centro",
+      "genero": "Femenino",
+      "nacionalidad": "Peruana",
+      "fechaNacimiento": "1994-11-20",
+      "direccion": "Calle Los Pinos 340, Miraflores, Lima",
+      "distrito": "Miraflores",
+      "provincia": "Lima",
+      "departamentoResidencia": "Lima",
+      "contactoEmergencia": "Carlos Torres (Hermano) - 987123456",
+      "foto": null,
+      "estado": "Activo",
+      "motivoCese": "",
+      "comentarioCese": "",
+      "fechaInicioContrato": "2025-05-10",
+      "fechaFinContrato": "2026-05-10",
+      "esIndeterminado": false,
+      "remuneracion": 2800,
+      "renovaciones": [
+        {
+          "id": 201,
+          "fechaRenovacion": "2025-05-10",
+          "nuevaFechaFin": "2026-05-10",
+          "observacion": "Renovación inicial por 1 año de servicios."
+        }
+      ],
+      "historialRemuneraciones": [
+        {
+          "id": 1002,
+          "fecha": "2025-05-10",
+          "monto": 2500,
+          "motivo": "Remuneración inicial de contrato",
+          "renovacionId": null
+        },
+        {
+          "id": 1003,
+          "fecha": "2025-05-10",
+          "monto": 2800,
+          "motivo": "Aumento por Renovación de Contrato",
+          "renovacionId": 201
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "nombre": "Roberto Gómez",
+      "dni": "10928374",
+      "correo": "roberto.gomez@empresa.com",
+      "celular": "934567890",
+      "puesto": "Analista Financiero",
+      "departamento": "CONTABILIDAD",
+      "ruta": "Ruta Sur",
+      "genero": "Masculino",
+      "nacionalidad": "Peruana",
+      "fechaNacimiento": "1988-03-08",
+      "direccion": "Jr. Ayacucho 567, Cercado de Lima",
+      "distrito": "Cercado de Lima",
+      "provincia": "Lima",
+      "departamentoResidencia": "Lima",
+      "contactoEmergencia": "Lucía Gómez (Madre) - 976543210",
+      "foto": null,
+      "estado": "Vacaciones",
+      "motivoCese": "",
+      "comentarioCese": "",
+      "fechaInicioContrato": "2023-11-15",
+      "fechaFinContrato": "2026-11-15",
+      "esIndeterminado": false,
+      "remuneracion": 3100,
+      "renovaciones": [],
+      "historialRemuneraciones": [
+        {
+          "id": 1004,
+          "fecha": "2023-11-15",
+          "monto": 3100,
+          "motivo": "Remuneración inicial de contrato",
+          "renovacionId": null
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "nombre": "Sofia Rodríguez",
+      "dni": "71239845",
+      "correo": "sofia.rodriguez@empresa.com",
+      "celular": "945678901",
+      "puesto": "Diseñadora UX/UI",
+      "departamento": "ADMINISTRACION",
+      "ruta": "Ruta Este",
+      "genero": "Femenino",
+      "nacionalidad": "Peruana",
+      "fechaNacimiento": "1997-09-28",
+      "direccion": "Av. Arequipa 1520, Lince, Lima",
+      "distrito": "Lince",
+      "provincia": "Lima",
+      "departamentoResidencia": "Lima",
+      "contactoEmergencia": "Jorge Rodríguez (Padre) - 965432109",
+      "foto": null,
+      "estado": "Cesado",
+      "motivoCese": "Término de Contrato",
+      "comentarioCese": "Culminación satisfactoria del contrato a plazo fijo.",
+      "fechaInicioContrato": "2025-01-10",
+      "fechaFinContrato": "2026-06-30",
+      "esIndeterminado": false,
+      "remuneracion": 2600,
+      "renovaciones": [],
+      "historialRemuneraciones": [
+        {
+          "id": 1005,
+          "fecha": "2025-01-10",
+          "monto": 2600,
+          "motivo": "Remuneración inicial de contrato",
+          "renovacionId": null
+        }
+      ]
+    }
+  ],
+  "vacations": [
+    {
+      "id": 101,
+      "employeeId": 1,
+      "tipo": "Pasadas",
+      "periodo": "Periodo 2024-2025",
+      "fechaInicio": "2026-01-10",
+      "fechaFin": "2026-01-15",
+      "dias": 6,
+      "motivo": "Vacaciones de inicio de año",
+      "estado": "Aprobado"
+    },
+    {
+      "id": 102,
+      "employeeId": 2,
+      "tipo": "Pasadas",
+      "periodo": "Periodo 2025-2026",
+      "fechaInicio": "2026-03-01",
+      "fechaFin": "2026-03-05",
+      "dias": 5,
+      "motivo": "Descanso familiar",
+      "estado": "Aprobado"
+    },
+    {
+      "id": 103,
+      "employeeId": 3,
+      "tipo": "Nueva Solicitud",
+      "periodo": "Periodo 2024-2025",
+      "fechaInicio": "2026-07-20",
+      "fechaFin": "2026-07-30",
+      "dias": 11,
+      "motivo": "Vacaciones estivales",
+      "estado": "Aprobado"
+    }
+  ]
+}

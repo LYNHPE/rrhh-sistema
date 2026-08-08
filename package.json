@@ -1,0 +1,17 @@
+{
+  "name": "rrhh-sistema-empleados-vacaciones",
+  "version": "1.0.0",
+  "description": "Sistema de Control de Empleados y Vacaciones RRHH Full-Stack para Render",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": ["rrhh", "vacaciones", "empleados", "render", "express"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2"
+  }
+}
