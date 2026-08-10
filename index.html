@@ -919,14 +919,14 @@
 
       <!-- Vacation Form -->
       <form id="vacation-form" class="p-6 space-y-4">
-        <!-- Selección de Empleado -->
+        <!-- Selección de Empleado (Fijo al trabajador seleccionado) -->
         <div>
           <label for="form-vacation-employee"
             class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
-            Seleccionar Empleado <span class="text-rose-500">*</span>
+            Trabajador Seleccionado <span class="text-rose-500">*</span>
           </label>
-          <select id="form-vacation-employee" required
-            class="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 text-sm">
+          <select id="form-vacation-employee" required disabled
+            class="w-full px-3.5 py-2 bg-slate-900 border border-slate-700/80 rounded-xl text-slate-200 font-semibold cursor-not-allowed opacity-90 text-sm">
             <!-- Dynamic employee options -->
           </select>
         </div>
@@ -4363,6 +4363,7 @@
 
           function populateEmployeeDropdowns() {
             const activeEmployees = employees.filter(e => e.estado !== 'Cesado');
+            const savedEmpId = vacationEmployeeSelect && vacationEmployeeSelect.value ? parseInt(vacationEmployeeSelect.value) : null;
 
             if (vacationEmployeeSelect) vacationEmployeeSelect.innerHTML = '';
             if (formVacationEmployee) formVacationEmployee.innerHTML = '';
@@ -4389,15 +4390,17 @@
               if (formVacationEmployee) formVacationEmployee.appendChild(optionForm);
             });
 
-            const currentVal = vacationEmployeeSelect ? parseInt(vacationEmployeeSelect.value) : null;
-            if (!currentVal || !activeEmployees.some(e => e.id === currentVal)) {
-              if (vacationEmployeeSelect) vacationEmployeeSelect.value = activeEmployees[0].id;
-              if (vacationEmployeeSearchInput) vacationEmployeeSearchInput.value = activeEmployees[0].nombre;
-            } else {
-              const selectedEmp = activeEmployees.find(e => e.id === currentVal);
+            if (savedEmpId && activeEmployees.some(e => e.id === savedEmpId)) {
+              if (vacationEmployeeSelect) vacationEmployeeSelect.value = savedEmpId;
+              if (formVacationEmployee) formVacationEmployee.value = savedEmpId;
+              const selectedEmp = activeEmployees.find(e => e.id === savedEmpId);
               if (selectedEmp && vacationEmployeeSearchInput) {
                 vacationEmployeeSearchInput.value = selectedEmp.nombre;
               }
+            } else {
+              if (vacationEmployeeSelect) vacationEmployeeSelect.value = activeEmployees[0].id;
+              if (formVacationEmployee) formVacationEmployee.value = activeEmployees[0].id;
+              if (vacationEmployeeSearchInput) vacationEmployeeSearchInput.value = activeEmployees[0].nombre;
             }
           }
 
@@ -4446,6 +4449,7 @@
             if (!emp) return;
 
             if (vacationEmployeeSelect) vacationEmployeeSelect.value = emp.id;
+            if (formVacationEmployee) formVacationEmployee.value = emp.id;
             if (vacationEmployeeSearchInput) vacationEmployeeSearchInput.value = emp.nombre;
             if (vacationEmployeeSuggestions) vacationEmployeeSuggestions.classList.add('hidden');
 
@@ -4844,8 +4848,14 @@
           function openVacationModal() {
             populateEmployeeDropdowns();
 
-            if (vacationEmployeeSelect.value) {
-              formVacationEmployee.value = vacationEmployeeSelect.value;
+            const currentEmpId = vacationEmployeeSelect && vacationEmployeeSelect.value ? parseInt(vacationEmployeeSelect.value) : null;
+
+            if (currentEmpId) {
+              formVacationEmployee.value = currentEmpId;
+            }
+
+            if (formVacationEmployee) {
+              formVacationEmployee.disabled = true;
             }
 
             populateVacationPeriodOptions(formVacationEmployee.value);
@@ -4877,7 +4887,7 @@
           vacationForm.addEventListener('submit', async (e) => {
             e.preventDefault();
 
-            const empId = parseInt(formVacationEmployee.value);
+            const empId = parseInt(formVacationEmployee.value || vacationEmployeeSelect.value);
             if (!empId) {
               alert("Por favor selecciona un empleado válido.");
               return;
