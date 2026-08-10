@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es" class="h-full bg-slate-950 text-slate-100 font-sans">
 
 <head>
@@ -1764,6 +1764,13 @@
               });
               if (!res.ok) {
                 console.error("Error HTTP al guardar empleados:", res.status);
+              } else {
+                const data = await res.json();
+                if (data && Array.isArray(data.failedRows) && data.failedRows.length > 0) {
+                  console.warn("⚠️ [Servidor Error Log] Filas no guardadas por el servidor:", data.failedRows);
+                  const errorSummary = data.failedRows.map(f => `• Fila ${f.fila} (${f.nombre} - DNI ${f.dni}): ${f.motivo}`).join('\n');
+                  alert(`⚠️ REPORTE DE CARGA MASIVA CON ADVERTENCIAS:\n\nSe guardaron ${data.insertedCount} de ${data.totalRecibidos} empleados exitosamente.\n\nDetalle de ${data.failedRows.length} fila(s) omitida(s):\n${errorSummary}`);
+                }
               }
               await loadDataFromServer();
             } catch (err) {
@@ -2375,18 +2382,14 @@
 
             const today = new Date().toISOString().split('T')[0];
             let importedCount = 0;
-            let skippedDuplicates = 0;
 
-            pendingImportEmployees.forEach(item => {
-              if (item.dni && employees.some(e => e.dni && e.dni.trim() === item.dni.trim())) {
-                skippedDuplicates++;
-                return;
-              }
+            const newEmployeesToImport = [];
 
+            pendingImportEmployees.forEach((item, idx) => {
               const startDate = item.fechaInicioContrato || today;
 
               const newEmp = {
-                id: Date.now() + Math.floor(Math.random() * 10000),
+                id: Date.now() + idx + Math.floor(Math.random() * 1000),
                 nombre: item.trabajador,
                 dni: item.dni,
                 correo: item.correo,
@@ -2413,7 +2416,7 @@
                 renovaciones: [],
                 historialRemuneraciones: [
                   {
-                    id: Date.now() + Math.floor(Math.random() * 1000),
+                    id: Date.now() + idx + 50000,
                     fecha: startDate,
                     monto: item.remuneracion || 2500,
                     motivo: "Remuneración inicial de contrato",
@@ -2422,23 +2425,14 @@
                 ]
               };
 
-              employees.unshift(newEmp);
+              newEmployeesToImport.push(newEmp);
               importedCount++;
             });
 
-            saveEmployeesToStorage();
-            renderEmployees();
-            renderCesadosModule();
-            populateEmployeeDropdowns();
-            renderVacationModule();
-
+            saveEmployeesToStorage(newEmployeesToImport);
             closeImportModal();
 
-            let msg = `¡Se importaron ${importedCount} trabajador(es) con éxito desde Excel!`;
-            if (skippedDuplicates > 0) {
-              msg += ` (${skippedDuplicates} omitido(s) por DNI duplicado).`;
-            }
-            showToast(msg, 'success');
+            showToast(`Procesando carga masiva de ${importedCount} trabajador(es) con el servidor...`, 'info');
           }
 
 

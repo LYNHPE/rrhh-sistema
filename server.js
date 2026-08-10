@@ -155,54 +155,101 @@ app.post('/api/empleados', async (req, res) => {
     const body = req.body;
 
     if (Array.isArray(body)) {
-      // 1. Filtrar y limpiar filas vacías o inválidas
-      const baseTime = Date.now();
-      const validEmployees = body
-        .filter(emp => emp && typeof emp === 'object' && (emp.nombre || emp.trabajador) && String(emp.nombre || emp.trabajador).trim().length > 0)
-        .map((emp, idx) => {
-          const cleanName = String(emp.nombre || emp.trabajador || '').trim();
-          const empId = Number(emp.id) && !isNaN(Number(emp.id)) ? Number(emp.id) : (baseTime + idx);
+      console.log(`\n==========================================`);
+      console.log(`📥 [POST /api/empleados] Procesando carga masiva de ${body.length} registro(s).`);
 
-          return {
-            id: empId,
-            nombre: cleanName,
-            dni: emp.dni ? String(emp.dni).trim() : '',
-            correo: emp.correo ? String(emp.correo).trim() : '',
-            celular: emp.celular ? String(emp.celular).trim() : '',
-            puesto: emp.puesto ? String(emp.puesto).trim() : 'Empleado',
-            departamento: emp.departamento ? String(emp.departamento).trim() : 'OPERACIONES',
-            ruta: emp.ruta ? String(emp.ruta).trim() : '',
-            genero: emp.genero || 'Masculino',
-            nacionalidad: emp.nacionalidad ? String(emp.nacionalidad).trim() : 'Peruana',
-            fechaNacimiento: emp.fechaNacimiento || '',
-            direccion: emp.direccion ? String(emp.direccion).trim() : '',
-            distrito: emp.distrito ? String(emp.distrito).trim() : '',
-            provincia: emp.provincia ? String(emp.provincia).trim() : '',
-            departamentoResidencia: emp.departamentoResidencia ? String(emp.departamentoResidencia).trim() : '',
-            contactoEmergencia: emp.contactoEmergencia ? String(emp.contactoEmergencia).trim() : '',
-            foto: emp.foto || null,
-            estado: emp.estado || 'Activo',
-            motivoCese: emp.motivoCese || '',
-            comentarioCese: emp.comentarioCese || '',
-            fechaInicioContrato: emp.fechaInicioContrato || new Date().toISOString().split('T')[0],
-            fechaFinContrato: emp.fechaFinContrato || '',
-            esIndeterminado: emp.esIndeterminado !== undefined ? emp.esIndeterminado : true,
-            remuneracion: Number(emp.remuneracion) || 2500,
-            renovaciones: Array.isArray(emp.renovaciones) ? emp.renovaciones : [],
-            historialRemuneraciones: Array.isArray(emp.historialRemuneraciones) ? emp.historialRemuneraciones : [
-              {
-                id: baseTime + idx + 50000,
-                fecha: emp.fechaInicioContrato || new Date().toISOString().split('T')[0],
-                monto: Number(emp.remuneracion) || 2500,
-                motivo: "Remuneración inicial de contrato",
-                renovacionId: 'INICIAL'
-              }
-            ]
-          };
+      const baseTime = Date.now();
+      const validEmployees = [];
+      const validationErrors = [];
+      const seenDnisInPayload = new Set();
+      const seenIdsInPayload = new Set();
+
+      // 1. Limpieza y Validación Fila por Fila
+      body.forEach((emp, idx) => {
+        const rowNum = idx + 1;
+
+        if (!emp || typeof emp !== 'object') {
+          const errItem = { fila: rowNum, nombre: 'Desconocido', dni: 'N/A', motivo: 'El registro no es un objeto válido' };
+          validationErrors.push(errItem);
+          console.warn(`⚠️ [Carga Masiva Log] Fila ${rowNum}: ${errItem.motivo}`);
+          return;
+        }
+
+        const cleanName = String(emp.nombre || emp.trabajador || '').trim();
+        const cleanDni = emp.dni ? String(emp.dni).trim() : '';
+
+        if (!cleanName) {
+          const errItem = { fila: rowNum, nombre: 'Sin Nombre', dni: cleanDni || 'N/A', motivo: 'Nombre o Trabajador no especificado' };
+          validationErrors.push(errItem);
+          console.warn(`⚠️ [Carga Masiva Log] Fila ${rowNum} (DNI: ${cleanDni || 'N/A'}): ${errItem.motivo}`);
+          return;
+        }
+
+        // Detectar DNI duplicado en la misma carga útil
+        if (cleanDni && seenDnisInPayload.has(cleanDni)) {
+          const errItem = { fila: rowNum, nombre: cleanName, dni: cleanDni, motivo: `DNI duplicado en el mismo archivo Excel (${cleanDni})` };
+          validationErrors.push(errItem);
+          console.warn(`⚠️ [Carga Masiva Log] Fila ${rowNum} (${cleanName}): ${errItem.motivo}`);
+          return;
+        }
+        if (cleanDni) seenDnisInPayload.add(cleanDni);
+
+        // Asignar o normalizar ID único
+        let empId = Number(emp.id);
+        if (!empId || isNaN(empId) || seenIdsInPayload.has(empId)) {
+          empId = baseTime + idx;
+        }
+        seenIdsInPayload.add(empId);
+
+        // Validación y formato de fechas
+        let cleanFechaInicio = emp.fechaInicioContrato;
+        if (cleanFechaInicio && isNaN(Date.parse(cleanFechaInicio))) {
+          console.warn(`⚠️ [Carga Masiva Log] Fila ${rowNum} (${cleanName}): Fecha inicio "${cleanFechaInicio}" inválida, ajustando a fecha actual.`);
+          cleanFechaInicio = new Date().toISOString().split('T')[0];
+        } else if (!cleanFechaInicio) {
+          cleanFechaInicio = new Date().toISOString().split('T')[0];
+        }
+
+        validEmployees.push({
+          id: empId,
+          nombre: cleanName,
+          dni: cleanDni,
+          correo: emp.correo ? String(emp.correo).trim() : '',
+          celular: emp.celular ? String(emp.celular).trim() : '',
+          puesto: emp.puesto ? String(emp.puesto).trim() : 'Empleado',
+          departamento: emp.departamento ? String(emp.departamento).trim() : 'OPERACIONES',
+          ruta: emp.ruta ? String(emp.ruta).trim() : '',
+          genero: emp.genero || 'Masculino',
+          nacionalidad: emp.nacionalidad ? String(emp.nacionalidad).trim() : 'Peruana',
+          fechaNacimiento: emp.fechaNacimiento || '',
+          direccion: emp.direccion ? String(emp.direccion).trim() : '',
+          distrito: emp.distrito ? String(emp.distrito).trim() : '',
+          provincia: emp.provincia ? String(emp.provincia).trim() : '',
+          departamentoResidencia: emp.departamentoResidencia ? String(emp.departamentoResidencia).trim() : '',
+          contactoEmergencia: emp.contactoEmergencia ? String(emp.contactoEmergencia).trim() : '',
+          foto: emp.foto || null,
+          estado: emp.estado || 'Activo',
+          motivoCese: emp.motivoCese || '',
+          comentarioCese: emp.comentarioCese || '',
+          fechaInicioContrato: cleanFechaInicio,
+          fechaFinContrato: emp.fechaFinContrato || '',
+          esIndeterminado: emp.esIndeterminado !== undefined ? emp.esIndeterminado : true,
+          remuneracion: Number(emp.remuneracion) || 2500,
+          renovaciones: Array.isArray(emp.renovaciones) ? emp.renovaciones : [],
+          historialRemuneraciones: Array.isArray(emp.historialRemuneraciones) ? emp.historialRemuneraciones : [
+            {
+              id: baseTime + idx + 50000,
+              fecha: cleanFechaInicio,
+              monto: Number(emp.remuneracion) || 2500,
+              motivo: "Remuneración inicial de contrato",
+              renovacionId: 'INICIAL'
+            }
+          ]
         });
+      });
 
       let insertedCount = 0;
-      let errors = [];
+      const dbErrors = [];
 
       if (isMongoConnected) {
         await Employee.deleteMany({});
@@ -211,34 +258,76 @@ app.post('/api/empleados', async (req, res) => {
           try {
             const docs = await Employee.insertMany(validEmployees, { ordered: false });
             insertedCount = docs.length;
+            console.log(`✅ [MongoDB insertMany Success] ${insertedCount} empleados insertados correctamente.`);
           } catch (bulkErr) {
+            // Extraer la cantidad de documentos insertados exitosamente antes/durante el error
             if (bulkErr.insertedDocs && Array.isArray(bulkErr.insertedDocs)) {
               insertedCount = bulkErr.insertedDocs.length;
             } else if (bulkErr.result && bulkErr.result.nInserted) {
               insertedCount = bulkErr.result.nInserted;
             }
 
-            if (bulkErr.writeErrors && Array.isArray(bulkErr.writeErrors)) {
-              errors = bulkErr.writeErrors.map(we => {
+            // Analizar writeErrors detalladamente
+            const writeErrors = bulkErr.writeErrors || (bulkErr.result && bulkErr.result.writeErrors) || [];
+            if (Array.isArray(writeErrors) && writeErrors.length > 0) {
+              writeErrors.forEach(we => {
                 const failedDoc = validEmployees[we.index];
-                return `Fila ${we.index + 1} (${failedDoc ? failedDoc.nombre : 'Desconocido'}): ${we.errmsg || 'Error de duplicado/inserción'}`;
+                let motivo = 'Error de inserción en base de datos';
+                const errMsg = we.errmsg || we.message || JSON.stringify(we);
+
+                if (we.code === 11000 || errMsg.includes('dup key')) {
+                  if (errMsg.includes('dni')) {
+                    motivo = `DNI duplicado en base de datos (${failedDoc ? failedDoc.dni : 'N/A'})`;
+                  } else if (errMsg.includes('id')) {
+                    motivo = `ID duplicado (${failedDoc ? failedDoc.id : 'N/A'})`;
+                  } else {
+                    motivo = `Registro o clave duplicada en base de datos`;
+                  }
+                } else if (errMsg.includes('validation')) {
+                  motivo = `Error de validación: ${errMsg}`;
+                } else {
+                  motivo = errMsg;
+                }
+
+                const filaNum = we.index + 1;
+                const docNombre = failedDoc ? failedDoc.nombre : 'Desconocido';
+                const docDni = failedDoc ? failedDoc.dni : 'Sin DNI';
+
+                console.error(`❌ [MongoDB writeError] Fila ${filaNum} (${docNombre} - DNI: ${docDni}): ${motivo}`);
+
+                dbErrors.push({
+                  fila: filaNum,
+                  nombre: docNombre,
+                  dni: docDni,
+                  motivo: motivo
+                });
               });
             } else {
-              errors.push(bulkErr.message);
+              console.error(`❌ [MongoDB Bulk Error General]:`, bulkErr.message);
+              dbErrors.push({ fila: 0, nombre: 'Sistema', dni: 'N/A', motivo: bulkErr.message });
             }
           }
         }
 
+        const allErrors = [...validationErrors, ...dbErrors];
+        const formattedErrorsText = allErrors.map(e => `Fila ${e.fila} (${e.nombre} - DNI: ${e.dni}): ${e.motivo}`);
         const employees = await Employee.find({}, { _id: 0, __v: 0 }).lean();
-        const msg = `Se procesó la carga masiva: ${insertedCount} de ${body.length} empleado(s) insertado(s) con éxito.` + (errors.length > 0 ? ` Ocurrieron errores en ${errors.length} fila(s).` : '');
-        
+
+        console.log(`📊 [Resumen Carga Masiva]: ${insertedCount} guardados con éxito / ${body.length} recibidos / ${allErrors.length} errores.`);
+        console.log(`==========================================\n`);
+
+        const msg = `Se procesó la carga masiva: ${insertedCount} de ${body.length} empleado(s) guardado(s) con éxito.` +
+          (allErrors.length > 0 ? ` Se identificaron ${allErrors.length} fila(s) con error u omisión.` : '');
+
         return res.status(201).json({
           success: true,
           message: msg,
           insertedCount,
           totalRecibidos: body.length,
           filasValidas: validEmployees.length,
-          errors,
+          errorCount: allErrors.length,
+          errors: formattedErrorsText,
+          failedRows: allErrors,
           employees
         });
       }
@@ -247,13 +336,18 @@ app.post('/api/empleados', async (req, res) => {
       const data = readData();
       data.employees = validEmployees;
       writeData(data);
+      const allErrors = validationErrors;
+      const formattedErrorsText = allErrors.map(e => `Fila ${e.fila} (${e.nombre} - DNI: ${e.dni}): ${e.motivo}`);
+
       return res.status(201).json({
         success: true,
         message: `Se procesó la carga masiva local: ${validEmployees.length} de ${body.length} empleado(s) guardado(s) con éxito.`,
         insertedCount: validEmployees.length,
         totalRecibidos: body.length,
         filasValidas: validEmployees.length,
-        errors: [],
+        errorCount: allErrors.length,
+        errors: formattedErrorsText,
+        failedRows: allErrors,
         employees: data.employees
       });
     }
