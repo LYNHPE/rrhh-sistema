@@ -11,8 +11,8 @@ const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/rrhh_d
 
 // Middlewares
 app.use(cors());
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // ==========================================
 // MONGOOSE SCHEMAS & MODELS
@@ -98,11 +98,11 @@ async function seedInitialData() {
     if (empCount === 0 && fs.existsSync(DB_FILE)) {
       const initialData = readData();
       if (Array.isArray(initialData.employees) && initialData.employees.length > 0) {
-        await Employee.insertMany(initialData.employees);
+        await Employee.insertMany(initialData.employees, { ordered: false });
         console.log(`📦 Datos migrados a MongoDB: ${initialData.employees.length} empleado(s).`);
       }
       if (Array.isArray(initialData.vacations) && initialData.vacations.length > 0) {
-        await Vacation.insertMany(initialData.vacations);
+        await Vacation.insertMany(initialData.vacations, { ordered: false });
         console.log(`📦 Datos migrados a MongoDB: ${initialData.vacations.length} registro(s) de vacaciones.`);
       }
     }
@@ -154,43 +154,140 @@ app.post('/api/empleados', async (req, res) => {
   try {
     const body = req.body;
 
-    if (isMongoConnected) {
-      if (Array.isArray(body)) {
-        // Importación masiva desde Excel
+    if (Array.isArray(body)) {
+      // 1. Filtrar y limpiar filas vacías o inválidas
+      const baseTime = Date.now();
+      const validEmployees = body
+        .filter(emp => emp && typeof emp === 'object' && (emp.nombre || emp.trabajador) && String(emp.nombre || emp.trabajador).trim().length > 0)
+        .map((emp, idx) => {
+          const cleanName = String(emp.nombre || emp.trabajador || '').trim();
+          const empId = Number(emp.id) && !isNaN(Number(emp.id)) ? Number(emp.id) : (baseTime + idx);
+
+          return {
+            id: empId,
+            nombre: cleanName,
+            dni: emp.dni ? String(emp.dni).trim() : '',
+            correo: emp.correo ? String(emp.correo).trim() : '',
+            celular: emp.celular ? String(emp.celular).trim() : '',
+            puesto: emp.puesto ? String(emp.puesto).trim() : 'Empleado',
+            departamento: emp.departamento ? String(emp.departamento).trim() : 'OPERACIONES',
+            ruta: emp.ruta ? String(emp.ruta).trim() : '',
+            genero: emp.genero || 'Masculino',
+            nacionalidad: emp.nacionalidad ? String(emp.nacionalidad).trim() : 'Peruana',
+            fechaNacimiento: emp.fechaNacimiento || '',
+            direccion: emp.direccion ? String(emp.direccion).trim() : '',
+            distrito: emp.distrito ? String(emp.distrito).trim() : '',
+            provincia: emp.provincia ? String(emp.provincia).trim() : '',
+            departamentoResidencia: emp.departamentoResidencia ? String(emp.departamentoResidencia).trim() : '',
+            contactoEmergencia: emp.contactoEmergencia ? String(emp.contactoEmergencia).trim() : '',
+            foto: emp.foto || null,
+            estado: emp.estado || 'Activo',
+            motivoCese: emp.motivoCese || '',
+            comentarioCese: emp.comentarioCese || '',
+            fechaInicioContrato: emp.fechaInicioContrato || new Date().toISOString().split('T')[0],
+            fechaFinContrato: emp.fechaFinContrato || '',
+            esIndeterminado: emp.esIndeterminado !== undefined ? emp.esIndeterminado : true,
+            remuneracion: Number(emp.remuneracion) || 2500,
+            renovaciones: Array.isArray(emp.renovaciones) ? emp.renovaciones : [],
+            historialRemuneraciones: Array.isArray(emp.historialRemuneraciones) ? emp.historialRemuneraciones : [
+              {
+                id: baseTime + idx + 50000,
+                fecha: emp.fechaInicioContrato || new Date().toISOString().split('T')[0],
+                monto: Number(emp.remuneracion) || 2500,
+                motivo: "Remuneración inicial de contrato",
+                renovacionId: 'INICIAL'
+              }
+            ]
+          };
+        });
+
+      let insertedCount = 0;
+      let errors = [];
+
+      if (isMongoConnected) {
         await Employee.deleteMany({});
-        if (body.length > 0) {
-          await Employee.insertMany(body);
+
+        if (validEmployees.length > 0) {
+          try {
+            const docs = await Employee.insertMany(validEmployees, { ordered: false });
+            insertedCount = docs.length;
+          } catch (bulkErr) {
+            if (bulkErr.insertedDocs && Array.isArray(bulkErr.insertedDocs)) {
+              insertedCount = bulkErr.insertedDocs.length;
+            } else if (bulkErr.result && bulkErr.result.nInserted) {
+              insertedCount = bulkErr.result.nInserted;
+            }
+
+            if (bulkErr.writeErrors && Array.isArray(bulkErr.writeErrors)) {
+              errors = bulkErr.writeErrors.map(we => {
+                const failedDoc = validEmployees[we.index];
+                return `Fila ${we.index + 1} (${failedDoc ? failedDoc.nombre : 'Desconocido'}): ${we.errmsg || 'Error de duplicado/inserción'}`;
+              });
+            } else {
+              errors.push(bulkErr.message);
+            }
+          }
         }
-      } else {
-        // Guardar nuevo empleado individual
-        if (!body.id) body.id = Date.now();
-        await Employee.findOneAndUpdate(
-          { id: body.id },
-          body,
-          { upsert: true, new: true, setDefaultsOnInsert: true }
-        );
+
+        const employees = await Employee.find({}, { _id: 0, __v: 0 }).lean();
+        const msg = `Se procesó la carga masiva: ${insertedCount} de ${body.length} empleado(s) insertado(s) con éxito.` + (errors.length > 0 ? ` Ocurrieron errores en ${errors.length} fila(s).` : '');
+        
+        return res.status(201).json({
+          success: true,
+          message: msg,
+          insertedCount,
+          totalRecibidos: body.length,
+          filasValidas: validEmployees.length,
+          errors,
+          employees
+        });
       }
-      const employees = await Employee.find({}, { _id: 0, __v: 0 }).lean();
-      return res.status(201).json({ success: true, message: 'Empleado(s) guardado(s) con éxito', employees });
+
+      // Fallback Local JSON
+      const data = readData();
+      data.employees = validEmployees;
+      writeData(data);
+      return res.status(201).json({
+        success: true,
+        message: `Se procesó la carga masiva local: ${validEmployees.length} de ${body.length} empleado(s) guardado(s) con éxito.`,
+        insertedCount: validEmployees.length,
+        totalRecibidos: body.length,
+        filasValidas: validEmployees.length,
+        errors: [],
+        employees: data.employees
+      });
     }
 
-    // Fallback Local JSON
-    const data = readData();
-    if (Array.isArray(body)) {
-      data.employees = body;
-    } else {
+    // Guardar o actualizar empleado individual
+    if (isMongoConnected) {
       if (!body.id) body.id = Date.now();
+      await Employee.findOneAndUpdate(
+        { id: body.id },
+        body,
+        { upsert: true, new: true, setDefaultsOnInsert: true }
+      );
+      const employees = await Employee.find({}, { _id: 0, __v: 0 }).lean();
+      return res.status(201).json({ success: true, message: 'Empleado guardado con éxito', employees });
+    }
+
+    // Fallback Local JSON para empleado individual
+    const data = readData();
+    if (!body.id) body.id = Date.now();
+    const index = data.employees.findIndex(e => e.id === body.id);
+    if (index !== -1) {
+      data.employees[index] = { ...data.employees[index], ...body };
+    } else {
       data.employees.unshift(body);
     }
 
     if (writeData(data)) {
-      res.status(201).json({ success: true, message: 'Empleado(s) guardado(s) con éxito', employees: data.employees });
+      res.status(201).json({ success: true, message: 'Empleado guardado con éxito', employees: data.employees });
     } else {
       res.status(500).json({ success: false, error: 'Error al persistir en base de datos' });
     }
   } catch (err) {
     console.error('Error en POST /api/empleados:', err);
-    res.status(500).json({ success: false, error: 'Error al guardar empleado(s)' });
+    res.status(500).json({ success: false, error: 'Error al procesar empleado(s)' });
   }
 });
 
