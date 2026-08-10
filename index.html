@@ -2792,13 +2792,13 @@
     function calculateContractVacations(fechaInicioStr, fechaFinStr, esIndeterminado) {
       if (!fechaInicioStr) {
         return { 
-          diasTotales: 30, 
-          diasVencidosCompleto: 30,
+          diasTotales: 0, 
+          diasVencidosCompleto: 0,
           diasTruncosEnCurso: 0,
-          periodosCompletados: 1,
+          periodosCompletados: 0,
           antiguedadTexto: 'No especificada', 
           totalMonths: 0,
-          years: 1,
+          years: 0,
           months: 0,
           periodosDetalle: []
         };
@@ -2809,13 +2809,13 @@
 
       if (isNaN(inicio.getTime())) {
         return { 
-          diasTotales: 30, 
-          diasVencidosCompleto: 30,
+          diasTotales: 0, 
+          diasVencidosCompleto: 0,
           diasTruncosEnCurso: 0,
-          periodosCompletados: 1,
+          periodosCompletados: 0,
           antiguedadTexto: 'Fecha inválida', 
           totalMonths: 0,
-          years: 1,
+          years: 0,
           months: 0,
           periodosDetalle: []
         };
@@ -2907,7 +2907,7 @@
       }
 
       return {
-        diasTotales: Math.max(30, diasCalculados),
+        diasTotales: diasCalculados,
         diasVencidosCompleto: diasGanadosAnosCumplidos,
         diasTruncosEnCurso: diasTruncosEnCurso,
         periodosCompletados: years,
