@@ -1265,7 +1265,7 @@
               </h4>
               <p class="text-xs text-slate-400 mt-1">
                 Descarga la plantilla oficial con los encabezados requeridos: <strong class="text-slate-200">TRABAJADOR,
-                  PUESTO, DEPARTAMENTO, RUTA, DNI, FECHA NACIMIENTO, FECHA INICIO CONTRATO</strong>.
+                  PUESTO, DEPARTAMENTO, RUTA, DNI, FECHA NACIMIENTO, FECHA INICIO CONTRATO, FECHA FIN CONTRATO</strong>.
               </p>
             </div>
             <button type="button" onclick="downloadExcelTemplate()"
@@ -2124,20 +2124,20 @@
             }, 250);
           }
 
-          // Download formatted Excel Template (.xlsx) with required headers: TRABAJADOR, PUESTO, DEPARTAMENTO, RUTA, DNI, FECHA NACIMIENTO, FECHA INICIO CONTRATO, REMUNERACION, CORREO, CELULAR, DIRECCION, DISTRITO, PROVINCIA, DEPARTAMENTO RESIDENCIA
+          // Download formatted Excel Template (.xlsx) with required headers: TRABAJADOR, PUESTO, DEPARTAMENTO, RUTA, DNI, FECHA NACIMIENTO, FECHA INICIO CONTRATO, FECHA FIN CONTRATO, REMUNERACION, CORREO, CELULAR, DIRECCION, DISTRITO, PROVINCIA, DEPARTAMENTO RESIDENCIA
           function downloadExcelTemplate() {
             const headers = [
-              ["TRABAJADOR", "PUESTO", "DEPARTAMENTO", "RUTA", "DNI", "FECHA NACIMIENTO", "FECHA INICIO CONTRATO", "REMUNERACION", "CORREO", "CELULAR", "DIRECCION", "DISTRITO", "PROVINCIA", "DEPARTAMENTO RESIDENCIA"]
+              ["TRABAJADOR", "PUESTO", "DEPARTAMENTO", "RUTA", "DNI", "FECHA NACIMIENTO", "FECHA INICIO CONTRATO", "FECHA FIN CONTRATO", "REMUNERACION", "CORREO", "CELULAR", "DIRECCION", "DISTRITO", "PROVINCIA", "DEPARTAMENTO RESIDENCIA"]
             ];
             const sampleRows = [
-              ["Juan Carlos Pérez", "Asistente Operativo", "OPERACIONES", "Ruta 1", "70087677", "1995-04-12", "2024-02-01", 2500, "juan.perez@empresa.com", "987654321", "Av. Perú 123", "San Borja", "Lima", "Lima"],
-              ["María Fernández Solís", "Coordinadora RRHH", "RRHH", "Ruta Centro", "45678912", "1991-08-25", "2025-05-10", 2800, "maria.fernandez@empresa.com", "912345678", "Calle Los Olivos 456", "Miraflores", "Lima", "Lima"]
+              ["Juan Carlos Pérez", "Asistente Operativo", "OPERACIONES", "Ruta 1", "70087677", "1995-04-12", "2024-02-01", "INDETERMINADO", 2500, "juan.perez@empresa.com", "987654321", "Av. Perú 123", "San Borja", "Lima", "Lima"],
+              ["María Fernández Solís", "Coordinadora RRHH", "RRHH", "Ruta Centro", "45678912", "1991-08-25", "2025-05-10", "2025-11-10", 2800, "maria.fernandez@empresa.com", "912345678", "Calle Los Olivos 456", "Miraflores", "Lima", "Lima"]
             ];
 
             if (typeof XLSX !== 'undefined') {
               const ws = XLSX.utils.aoa_to_sheet([...headers, ...sampleRows]);
               ws['!cols'] = [
-                { wch: 26 }, { wch: 22 }, { wch: 20 }, { wch: 16 }, { wch: 12 }, { wch: 18 }, { wch: 24 }, { wch: 16 }, { wch: 28 }, { wch: 14 }, { wch: 25 }, { wch: 16 }, { wch: 16 }, { wch: 22 }
+                { wch: 26 }, { wch: 22 }, { wch: 20 }, { wch: 16 }, { wch: 12 }, { wch: 18 }, { wch: 24 }, { wch: 22 }, { wch: 16 }, { wch: 28 }, { wch: 14 }, { wch: 25 }, { wch: 16 }, { wch: 16 }, { wch: 22 }
               ];
               const wb = XLSX.utils.book_new();
               XLSX.utils.book_append_sheet(wb, ws, "Plantilla Empleados");
@@ -2223,7 +2223,7 @@
             pendingImportEmployees = [];
 
             jsonRows.forEach(row => {
-              let trabajador = '', puesto = '', departamento = '', ruta = '', dni = '', fechaNacimiento = '', fechaInicioContrato = '', correo = '', celular = '', direccion = '', distrito = '', provincia = '', departamentoResidencia = '', remuneracion = 2500;
+              let trabajador = '', puesto = '', departamento = '', ruta = '', dni = '', fechaNacimiento = '', fechaInicioContrato = '', fechaFinContratoVal = '', correo = '', celular = '', direccion = '', distrito = '', provincia = '', departamentoResidencia = '', remuneracion = 2500;
 
               Object.keys(row).forEach(k => {
                 const keyUpper = String(k).trim().toUpperCase();
@@ -2242,6 +2242,7 @@
                 else if (keyUpper.includes('RUTA')) ruta = val;
                 else if (keyUpper.includes('DNI') || keyUpper.includes('IDENTIFICACION')) dni = val;
                 else if (keyUpper.includes('FECHA NACIMIENTO') || keyUpper.includes('NACIMIENTO') || keyUpper.includes('F. NAC')) fechaNacimiento = val;
+                else if (keyUpper.includes('FECHA FIN') || keyUpper.includes('FIN CONTRATO') || keyUpper.includes('F. FIN') || keyUpper.includes('FECHA DE FIN') || keyUpper.includes('TERMINO CONTRATO') || keyUpper.includes('VENCIMIENTO')) fechaFinContratoVal = val;
                 else if (keyUpper.includes('FECHA INICIO') || keyUpper.includes('INICIO CONTRATO') || keyUpper.includes('F. INICIO') || keyUpper.includes('FECHA DE INICIO') || keyUpper.includes('INICIO DE CONTRATO')) fechaInicioContrato = val;
                 else if (keyUpper.includes('REMUNERACION') || keyUpper.includes('SUELDO') || keyUpper.includes('SALARIO')) {
                   const parsedSueldo = parseFloat(val);
@@ -2292,6 +2293,24 @@
                 }
               }
 
+              let fechaFinContrato = '';
+              let esIndeterminado = true;
+
+              const cleanFinVal = String(fechaFinContratoVal || '').trim().toUpperCase();
+              if (cleanFinVal && cleanFinVal !== 'INDETERMINADO' && cleanFinVal !== 'INDETERMINADA' && cleanFinVal !== 'INDET') {
+                let parsedFinDate = String(fechaFinContratoVal).trim();
+                if (parsedFinDate.includes('/')) {
+                  const dParts = parsedFinDate.split('/');
+                  if (dParts.length === 3) {
+                    parsedFinDate = `${dParts[2]}-${String(dParts[1]).padStart(2, '0')}-${String(dParts[0]).padStart(2, '0')}`;
+                  }
+                }
+                if (parsedFinDate && parsedFinDate.length >= 8) {
+                  fechaFinContrato = parsedFinDate;
+                  esIndeterminado = false;
+                }
+              }
+
               pendingImportEmployees.push({
                 trabajador: trabajador,
                 puesto: puesto || 'Empleado',
@@ -2300,6 +2319,8 @@
                 dni: dni,
                 fechaNacimiento: fechaNacimiento,
                 fechaInicioContrato: fechaInicioContrato,
+                fechaFinContrato: fechaFinContrato,
+                esIndeterminado: esIndeterminado,
                 remuneracion: remuneracion,
                 correo: correo || '',
                 celular: celular || '',
@@ -2343,6 +2364,7 @@
           <td class="py-2.5 px-3 text-purple-300 font-medium">${escapeHTML(e.ruta)}</td>
           <td class="py-2.5 px-3 text-slate-300 font-mono">${escapeHTML(e.dni || '-')}</td>
           <td class="py-2.5 px-3 text-blue-300 font-medium whitespace-nowrap">${escapeHTML(formatDate(e.fechaInicioContrato) || 'Hoy')}</td>
+          <td class="py-2.5 px-3 text-slate-300 font-medium whitespace-nowrap">${e.esIndeterminado ? '<span class="px-1.5 py-0.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded font-semibold text-[10px]">INDETERMINADO</span>' : escapeHTML(formatDate(e.fechaFinContrato))}</td>
           <td class="py-2.5 px-3 text-amber-300 font-bold">S/ ${Number(e.remuneracion).toFixed(2)}</td>
         </tr>
       `).join('');
@@ -2358,6 +2380,7 @@
                 <th class="py-2 px-3">Ruta</th>
                 <th class="py-2 px-3">DNI</th>
                 <th class="py-2 px-3">Inicio Contrato</th>
+                <th class="py-2 px-3">Fin Contrato</th>
                 <th class="py-2 px-3">Sueldo Inicial</th>
               </tr>
             </thead>
@@ -2403,8 +2426,8 @@
                 motivoCese: '',
                 comentarioCese: '',
                 fechaInicioContrato: startDate,
-                fechaFinContrato: '',
-                esIndeterminado: true,
+                fechaFinContrato: item.esIndeterminado ? '' : (item.fechaFinContrato || ''),
+                esIndeterminado: item.esIndeterminado,
                 remuneracion: item.remuneracion || 2500,
                 renovaciones: [],
                 historialRemuneraciones: [
