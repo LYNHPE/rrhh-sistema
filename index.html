@@ -1883,14 +1883,6 @@
               showToast("¡Copia de Empleados Activos exportada en Excel!", "success");
 
             } else if (moduleType === 'vacations') {
-              const selectedEmpId = vacationEmployeeSelect ? parseInt(vacationEmployeeSelect.value) : null;
-              const selectedEmp = employees.find(e => e.id === selectedEmpId);
-
-              let targetVacations = vacations;
-              if (selectedEmpId) {
-                targetVacations = vacations.filter(v => v.employeeId === selectedEmpId);
-              }
-
               if (typeof XLSX === 'undefined') {
                 alert("Error: La librería XLSX no está cargada.");
                 return;
@@ -1898,7 +1890,7 @@
 
               const wb = XLSX.utils.book_new();
 
-              // HOJA 1: Historial de Vacaciones
+              // HOJA 1: Historial de Vacaciones (Todos los trabajadores)
               const headersHistorial = [
                 [
                   "TRABAJADOR",
@@ -1915,8 +1907,7 @@
                 ]
               ];
 
-              const listToExport = (targetVacations.length > 0) ? targetVacations : vacations;
-              const rowsHistorial = listToExport.map(v => {
+              const rowsHistorial = vacations.map(v => {
                 const emp = employees.find(e => e.id === v.employeeId);
                 return [
                   emp ? emp.nombre : 'Trabajador General',
@@ -1939,7 +1930,7 @@
               ];
               XLSX.utils.book_append_sheet(wb, wsHistorial, "Historial Vacaciones");
 
-              // HOJA 2: Resumen de Saldos Vacacionales (Empleados Activos)
+              // HOJA 2: Resumen de Saldos Vacacionales (Todos los Empleados Activos)
               const activeEmployees = employees.filter(e => e.estado !== 'Cesado');
               const headersSaldos = [
                 [
@@ -1985,9 +1976,9 @@
               ];
               XLSX.utils.book_append_sheet(wb, wsSaldos, "Resumen Saldos y Períodos");
 
-              const filename = selectedEmp ? `vacaciones_${selectedEmp.nombre.toLowerCase().replace(/\s+/g, '_')}_${fechaHoy}.xlsx` : `copia_control_vacaciones_completo_${fechaHoy}.xlsx`;
+              const filename = `copia_control_vacaciones_completo_${fechaHoy}.xlsx`;
               XLSX.writeFile(wb, filename);
-              showToast("¡Copia del Control de Vacaciones (Historial y Saldos) exportada en Excel!", "success");
+              showToast("¡Copia del Control de Vacaciones (Historial y Saldos de todos los trabajadores) exportada en Excel!", "success");
 
             } else if (moduleType === 'cesados') {
               const cesadosList = employees.filter(e => e.estado === 'Cesado');
