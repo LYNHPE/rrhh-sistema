@@ -235,7 +235,7 @@
                 class="bg-slate-950/60 border-b border-slate-800 text-xs font-semibold uppercase tracking-wider text-slate-400">
                 <th scope="col" class="py-3.5 px-4">Trabajador</th>
                 <th scope="col" class="py-3.5 px-4">Puesto</th>
-                <th scope="col" class="py-3.5 px-4">Departamento / Ruta</th>
+                <th scope="col" class="py-3.5 px-4">Departamento</th>
                 <th scope="col" class="py-3.5 px-4">Contrato (Inicio → Fin)</th>
                 <th scope="col" class="py-3.5 px-4">Estado</th>
                 <th scope="col" class="py-3.5 px-4 text-right">Acciones</th>
@@ -520,7 +520,7 @@
                 class="bg-slate-950/60 border-b border-slate-800 text-xs font-semibold uppercase tracking-wider text-slate-400">
                 <th scope="col" class="py-3.5 px-4">Trabajador</th>
                 <th scope="col" class="py-3.5 px-4">Puesto</th>
-                <th scope="col" class="py-3.5 px-4">Departamento / Ruta</th>
+                <th scope="col" class="py-3.5 px-4">Departamento</th>
                 <th scope="col" class="py-3.5 px-4">Motivo de Cese</th>
                 <th scope="col" class="py-3.5 px-4 text-right">Acciones</th>
               </tr>
@@ -2996,11 +2996,19 @@
             ${escapeHTML(emp.puesto)}
           </td>
           <td class="py-3.5 px-4">
-            <div class="flex items-center gap-1.5 flex-wrap">
-              <span class="px-2.5 py-1 bg-slate-800 text-slate-300 rounded-lg text-xs font-medium border border-slate-700/50 whitespace-nowrap">
-                ${escapeHTML(emp.departamento)}
-              </span>
-              ${emp.ruta ? `<span class="px-2.5 py-1 bg-purple-500/10 text-purple-300 rounded-lg text-xs font-medium border border-purple-500/20 whitespace-nowrap">${escapeHTML(emp.ruta)}</span>` : ''}
+            <div class="text-xs space-y-1.5">
+              <div>
+                <span class="px-2.5 py-1 bg-slate-800 text-slate-300 rounded-lg text-xs font-medium border border-slate-700/50">
+                  ${escapeHTML(emp.departamento)}
+                </span>
+              </div>
+              ${emp.ruta ? `
+              <div class="flex items-center gap-1.5">
+                <span class="text-slate-500 font-normal">Ruta:</span>
+                <span class="px-2.5 py-1 bg-purple-500/10 text-purple-300 rounded-lg text-xs font-medium border border-purple-500/20 whitespace-nowrap">
+                  ${escapeHTML(emp.ruta)}
+                </span>
+              </div>` : ''}
             </div>
           </td>
           <td class="py-3.5 px-4">
@@ -3123,11 +3131,19 @@
             ${escapeHTML(emp.puesto)}
           </td>
           <td class="py-3.5 px-4">
-            <div class="flex items-center gap-1.5 flex-wrap">
-              <span class="px-2.5 py-1 bg-slate-800 text-slate-300 rounded-lg text-xs font-medium border border-slate-700/50 whitespace-nowrap">
-                ${escapeHTML(emp.departamento)}
-              </span>
-              ${emp.ruta ? `<span class="px-2.5 py-1 bg-purple-500/10 text-purple-300 rounded-lg text-xs font-medium border border-purple-500/20 whitespace-nowrap">${escapeHTML(emp.ruta)}</span>` : ''}
+            <div class="text-xs space-y-1.5">
+              <div>
+                <span class="px-2.5 py-1 bg-slate-800 text-slate-300 rounded-lg text-xs font-medium border border-slate-700/50">
+                  ${escapeHTML(emp.departamento)}
+                </span>
+              </div>
+              ${emp.ruta ? `
+              <div class="flex items-center gap-1.5">
+                <span class="text-slate-500 font-normal">Ruta:</span>
+                <span class="px-2.5 py-1 bg-purple-500/10 text-purple-300 rounded-lg text-xs font-medium border border-purple-500/20 whitespace-nowrap">
+                  ${escapeHTML(emp.ruta)}
+                </span>
+              </div>` : ''}
             </div>
           </td>
           <td class="py-3.5 px-4">
