@@ -790,17 +790,33 @@
             </button>
           </div>
 
-          <div>
-            <label for="input-remuneracion-inicial"
-              class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
-              Remuneración Inicial (S/.) <span class="text-rose-500">*</span>
-            </label>
-            <div class="relative">
-              <span
-                class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-xs font-bold text-amber-400 pointer-events-none">S/</span>
-              <input type="number" step="0.01" min="0" id="input-remuneracion-inicial" required
-                placeholder="Ej. 2500.00"
-                class="w-full pl-9 pr-3.5 py-2 bg-slate-900 border border-slate-700 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 text-sm font-bold">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label for="input-remuneracion-inicial"
+                class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                Remuneración Inicial (S/.) <span class="text-rose-500">*</span>
+              </label>
+              <div class="relative">
+                <span
+                  class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-xs font-bold text-amber-400 pointer-events-none">S/</span>
+                <input type="number" step="0.01" min="0" id="input-remuneracion-inicial" required
+                  placeholder="Ej. 2500.00"
+                  class="w-full pl-9 pr-3.5 py-2 bg-slate-900 border border-slate-700 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 text-sm font-bold">
+              </div>
+            </div>
+
+            <div>
+              <label for="input-asignacion-familiar-inicial"
+                class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                Asignación Familiar (S/.)
+              </label>
+              <div class="relative">
+                <span
+                  class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-xs font-bold text-amber-400 pointer-events-none">S/</span>
+                <input type="number" step="0.01" min="0" id="input-asignacion-familiar-inicial"
+                  placeholder="Ej. 102.50"
+                  class="w-full pl-9 pr-3.5 py-2 bg-slate-900 border border-slate-700 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 text-sm font-bold">
+              </div>
             </div>
           </div>
 
@@ -1735,12 +1751,16 @@
                 if (emp.remuneracion === undefined || emp.remuneracion === null || isNaN(emp.remuneracion)) {
                   emp.remuneracion = 2500;
                 }
+                if (emp.asignacionFamiliar === undefined || emp.asignacionFamiliar === null || isNaN(emp.asignacionFamiliar)) {
+                  emp.asignacionFamiliar = 0;
+                }
                 if (!emp.historialRemuneraciones || !Array.isArray(emp.historialRemuneraciones) || emp.historialRemuneraciones.length === 0) {
                   emp.historialRemuneraciones = [
                     {
                       id: Date.now() + Math.floor(Math.random() * 1000),
                       fecha: emp.fechaInicioContrato || '2024-01-01',
                       monto: emp.remuneracion || 2500,
+                      asignacionFamiliar: emp.asignacionFamiliar || 0,
                       motivo: "Remuneración inicial de contrato",
                       renovacionId: null
                     }
@@ -2496,6 +2516,7 @@
           const inputFechaFinContrato = document.getElementById('input-fecha-fin-contrato');
           const inputContratoIndeterminado = document.getElementById('input-contrato-indeterminado');
           const inputRemuneracionInicial = document.getElementById('input-remuneracion-inicial');
+          const inputAsignacionFamiliarInicial = document.getElementById('input-asignacion-familiar-inicial');
 
           const formPhotoPreviewContainer = document.getElementById('form-photo-preview-container');
           const btnRemovePhoto = document.getElementById('btn-remove-photo');
@@ -3384,10 +3405,12 @@
               ];
             }
 
-            // Render Header Card with Current Salary & Asignación Familiar
+            // Render Header Card with Current Salary, Asignación Familiar & Total
             const headerCard = document.getElementById('remuneration-emp-header-card');
             const salaryFormatted = Number(emp.remuneracion || 0).toLocaleString('es-PE', { minimumFractionDigits: 2 });
             const asigFamFormatted = Number(emp.asignacionFamiliar || 0).toLocaleString('es-PE', { minimumFractionDigits: 2 });
+            const totalRemuneracion = (Number(emp.remuneracion) || 0) + (Number(emp.asignacionFamiliar) || 0);
+            const totalFormatted = totalRemuneracion.toLocaleString('es-PE', { minimumFractionDigits: 2 });
 
             headerCard.innerHTML = `
         <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
@@ -3395,7 +3418,7 @@
             <h4 class="text-base font-bold text-white">${escapeHTML(emp.nombre)}</h4>
             <p class="text-xs text-slate-400">${escapeHTML(emp.puesto)} • <span class="text-slate-300">${escapeHTML(emp.departamento)}</span></p>
           </div>
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap">
             <div class="text-right bg-amber-500/10 border border-amber-500/30 px-3 py-1.5 rounded-xl">
               <span class="block text-[10px] font-bold text-amber-400 uppercase tracking-wider">Sueldo Base</span>
               <span class="text-sm font-extrabold text-amber-300">S/ ${salaryFormatted}</span>
@@ -3403,6 +3426,10 @@
             <div class="text-right bg-blue-500/10 border border-blue-500/30 px-3 py-1.5 rounded-xl">
               <span class="block text-[10px] font-bold text-blue-400 uppercase tracking-wider">Asig. Familiar</span>
               <span class="text-sm font-extrabold text-blue-300">S/ ${asigFamFormatted}</span>
+            </div>
+            <div class="text-right bg-emerald-500/10 border border-emerald-500/30 px-3 py-1.5 rounded-xl">
+              <span class="block text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Total Ingreso</span>
+              <span class="text-sm font-extrabold text-emerald-300">S/ ${totalFormatted}</span>
             </div>
           </div>
         </div>
@@ -3468,7 +3495,11 @@
             const itemsHTML = sortedHistory.map((item, idx) => {
               const montoFormat = Number(item.monto).toLocaleString('es-PE', { minimumFractionDigits: 2 });
               const asigFamItem = Number(item.asignacionFamiliar || 0);
+              const totalItem = Number(item.monto || 0) + asigFamItem;
+              const totalFormat = totalItem.toLocaleString('es-PE', { minimumFractionDigits: 2 });
+
               const asigBadge = asigFamItem > 0 ? `<span class="px-1.5 py-0.5 bg-blue-500/10 text-blue-300 border border-blue-500/20 rounded font-semibold text-[10px]">Asig. Fam: S/ ${asigFamItem.toFixed(2)}</span>` : '';
+              const totalBadge = `<span class="px-1.5 py-0.5 bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 rounded font-semibold text-[10px]">Total: S/ ${totalFormat}</span>`;
 
               let diffBadge = '';
               if (idx < sortedHistory.length - 1) {
@@ -3498,6 +3529,7 @@
               <div class="flex items-center gap-2 flex-wrap">
                 <span class="font-extrabold text-amber-300 text-sm">S/ ${montoFormat}</span>
                 ${asigBadge}
+                ${totalBadge}
                 ${diffBadge}
                 ${vinculoTexto}
               </div>
@@ -3534,9 +3566,9 @@
               if (emp.historialRemuneraciones.length > 0) {
                 const sorted = [...emp.historialRemuneraciones].sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
                 emp.remuneracion = sorted[0].monto;
-                if (sorted[0].asignacionFamiliar !== undefined) {
-                  emp.asignacionFamiliar = sorted[0].asignacionFamiliar;
-                }
+                emp.asignacionFamiliar = sorted[0].asignacionFamiliar !== undefined ? sorted[0].asignacionFamiliar : 0;
+              } else {
+                emp.asignacionFamiliar = 0;
               }
 
               saveEmployeesToStorage();
@@ -3553,16 +3585,18 @@
             const emp = employees.find(e => e.id === currentRemunerationEmpId);
             if (!emp) return;
 
-            const nuevoMonto = parseFloat(document.getElementById('input-nueva-remuneracion').value);
-            const asigFamVal = parseFloat(document.getElementById('input-asignacion-familiar').value) || 0;
+            const inputMontoVal = document.getElementById('input-nueva-remuneracion').value;
+            const inputAsigVal = document.getElementById('input-asignacion-familiar').value;
+
+            let nuevoMonto = parseFloat(inputMontoVal);
+            if (isNaN(nuevoMonto) || nuevoMonto <= 0) {
+              nuevoMonto = emp.remuneracion || 2500;
+            }
+
+            const asigFamVal = parseFloat(inputAsigVal) >= 0 ? parseFloat(inputAsigVal) : 0;
             const fechaVigencia = document.getElementById('input-fecha-remuneracion').value;
             const motivo = document.getElementById('input-motivo-remuneracion').value;
             const vinculo = document.getElementById('input-renovacion-vinculada').value;
-
-            if (isNaN(nuevoMonto) || nuevoMonto <= 0) {
-              alert("Por favor ingresa un monto de remuneración válido mayor a cero.");
-              return;
-            }
 
             if (!fechaVigencia) {
               alert("Por favor selecciona la fecha de vigencia del nuevo sueldo.");
@@ -3590,7 +3624,9 @@
 
             openRemunerationModal(emp.id);
 
-            showToast(`¡Remuneración de ${emp.nombre} actualizada a S/ ${nuevoMonto.toLocaleString('es-PE', { minimumFractionDigits: 2 })}!`, 'success');
+            const totalFormat = (nuevoMonto + asigFamVal).toLocaleString('es-PE', { minimumFractionDigits: 2 });
+            const asigText = asigFamVal > 0 ? ` + Asig. Fam: S/ ${asigFamVal.toFixed(2)} (Total: S/ ${totalFormat})` : '';
+            showToast(`¡Remuneración de ${emp.nombre} actualizada! Sueldo Base: S/ ${nuevoMonto.toLocaleString('es-PE', { minimumFractionDigits: 2 })}${asigText}`, 'success');
           });
 
           function openContractRenewalModal(empId) {
@@ -3964,17 +4000,20 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           
           <!-- Remuneración Actual Card -->
-          <div class="p-4 bg-amber-950/20 border border-amber-900/40 rounded-xl flex items-center justify-between md:col-span-2">
+          <div class="p-4 bg-amber-950/20 border border-amber-900/40 rounded-xl flex items-center justify-between md:col-span-2 flex-wrap sm:flex-nowrap gap-3">
             <div>
               <span class="text-xs font-bold text-amber-400 uppercase tracking-wider block">Remuneración Actual Vigente</span>
-              <div class="flex items-baseline gap-2 mt-0.5">
-                <span class="text-lg font-extrabold text-amber-300">S/ ${emp.remuneracion ? Number(emp.remuneracion).toLocaleString('es-PE', { minimumFractionDigits: 2 }) : '2,500.00'}</span>
-                ${emp.asignacionFamiliar > 0 ? `<span class="text-xs text-blue-300 font-semibold bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 rounded-lg">+ S/ ${Number(emp.asignacionFamiliar).toFixed(2)} Asig. Fam.</span>` : ''}
+              <div class="flex items-baseline gap-2 mt-1 flex-wrap">
+                <span class="text-lg font-extrabold text-amber-300">S/ ${emp.remuneracion ? Number(emp.remuneracion).toLocaleString('es-PE', { minimumFractionDigits: 2 }) : '2,500.00'} <span class="text-xs font-normal text-amber-400/80">(Sueldo Base)</span></span>
+                ${emp.asignacionFamiliar > 0 ? `
+                  <span class="text-xs text-blue-300 font-semibold bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 rounded-lg">+ S/ ${Number(emp.asignacionFamiliar).toFixed(2)} Asig. Fam.</span>
+                  <span class="text-xs text-emerald-300 font-bold bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-lg">Total Ingreso: S/ ${(Number(emp.remuneracion || 0) + Number(emp.asignacionFamiliar || 0)).toLocaleString('es-PE', { minimumFractionDigits: 2 })}</span>
+                ` : ''}
               </div>
             </div>
             <button 
               onclick="closeProfileModal(); setTimeout(() => openRemunerationModal(${emp.id}), 260);" 
-              class="px-3 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 shadow-sm"
+              class="px-3 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 shadow-sm shrink-0"
             >
               <span>S/</span>
               <span>Ver / Incrementar Remuneración</span>
@@ -4105,6 +4144,7 @@
             const today = new Date().toISOString().split('T')[0];
             inputFechaInicioContrato.value = today;
             inputRemuneracionInicial.value = '2500.00';
+            if (inputAsignacionFamiliarInicial) inputAsignacionFamiliarInicial.value = '';
             inputContratoIndeterminado.checked = true;
             inputFechaFinContrato.disabled = true;
             inputFechaFinContrato.value = '';
@@ -4152,6 +4192,7 @@
             inputContactoEmergencia.value = emp.contactoEmergencia || '';
             inputEstado.value = emp.estado;
             inputRemuneracionInicial.value = emp.remuneracion !== undefined ? emp.remuneracion : 2500;
+            if (inputAsignacionFamiliarInicial) inputAsignacionFamiliarInicial.value = emp.asignacionFamiliar > 0 ? emp.asignacionFamiliar : '';
 
             if (emp.estado === 'Cesado') {
               sectionDetallesCese.classList.remove('hidden');
@@ -4216,6 +4257,7 @@
             const rutaVal = inputRuta.value.trim();
             const fechaInicioVal = inputFechaInicioContrato.value;
             const remuneracionVal = parseFloat(inputRemuneracionInicial.value);
+            const asigFamInicialVal = inputAsignacionFamiliarInicial ? (parseFloat(inputAsignacionFamiliarInicial.value) || 0) : 0;
 
             if (!nombreVal || !dniVal || !puestoVal || !departamentoVal || !rutaVal || !fechaInicioVal || isNaN(remuneracionVal) || remuneracionVal <= 0) {
               alert("Por favor completa todos los campos requeridos marcados con asterisco (*), incluyendo una remuneración válida mayor a cero.");
@@ -4287,6 +4329,7 @@
                   employees[index].fechaFinContrato = fechaFin;
                   employees[index].esIndeterminado = esIndet;
                   employees[index].remuneracion = remuneracionVal;
+                  employees[index].asignacionFamiliar = asigFamInicialVal;
 
                   if (!employees[index].historialRemuneraciones || !Array.isArray(employees[index].historialRemuneraciones)) {
                     employees[index].historialRemuneraciones = [
@@ -4294,6 +4337,7 @@
                         id: Date.now(),
                         fecha: fechaInicioVal,
                         monto: remuneracionVal,
+                        asignacionFamiliar: asigFamInicialVal,
                         motivo: "Remuneración inicial de contrato",
                         renovacionId: 'INICIAL'
                       }
@@ -4338,12 +4382,14 @@
                   fechaFinContrato: fechaFin,
                   esIndeterminado: esIndet,
                   remuneracion: remuneracionVal,
+                  asignacionFamiliar: asigFamInicialVal,
                   renovaciones: [],
                   historialRemuneraciones: [
                     {
                       id: Date.now(),
                       fecha: fechaInicioVal,
                       monto: remuneracionVal,
+                      asignacionFamiliar: asigFamInicialVal,
                       motivo: "Remuneración inicial de contrato",
                       renovacionId: 'INICIAL'
                     }

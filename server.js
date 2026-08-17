@@ -43,6 +43,7 @@ const employeeSchema = new mongoose.Schema({
   fechaFinContrato: { type: String, default: '' },
   esIndeterminado: { type: Boolean, default: false },
   remuneracion: { type: Number, default: 0 },
+  asignacionFamiliar: { type: Number, default: 0 },
   renovaciones: { type: Array, default: [] },
   historialRemuneraciones: { type: Array, default: [] }
 }, { timestamps: true });
@@ -235,12 +236,14 @@ app.post('/api/empleados', async (req, res) => {
           fechaFinContrato: emp.fechaFinContrato || '',
           esIndeterminado: emp.esIndeterminado !== undefined ? emp.esIndeterminado : true,
           remuneracion: Number(emp.remuneracion) || 2500,
+          asignacionFamiliar: Number(emp.asignacionFamiliar) || 0,
           renovaciones: Array.isArray(emp.renovaciones) ? emp.renovaciones : [],
           historialRemuneraciones: Array.isArray(emp.historialRemuneraciones) ? emp.historialRemuneraciones : [
             {
               id: baseTime + idx + 50000,
               fecha: cleanFechaInicio,
               monto: Number(emp.remuneracion) || 2500,
+              asignacionFamiliar: Number(emp.asignacionFamiliar) || 0,
               motivo: "Remuneración inicial de contrato",
               renovacionId: 'INICIAL'
             }
