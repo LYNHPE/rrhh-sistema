@@ -1766,6 +1766,19 @@
                     }
                   ];
                 }
+                // Sincronizar automáticamente el estado de vacaciones para el mes vigente
+                if (emp.estado !== 'Cesado') {
+                  const hasVacationCurrentMonth = Array.isArray(vacations) && vacations.some(v => 
+                    v.employeeId === emp.id && 
+                    (v.estado === 'Aprobado' || !v.estado) &&
+                    isVacationInCurrentMonth(v.fechaInicio, v.fechaFin)
+                  );
+                  if (hasVacationCurrentMonth) {
+                    emp.estado = 'Vacaciones';
+                  } else if (emp.estado === 'Vacaciones') {
+                    emp.estado = 'Activo';
+                  }
+                }
               });
 
               // Asegurar la renderización completa de la interfaz y la reactividad de todos los eventos
@@ -2694,8 +2707,48 @@
             return { initials: initials || 'EE', color: colors[colorIndex] };
           }
 
+          function isVacationInCurrentMonth(fechaInicio, fechaFin) {
+            if (!fechaInicio) return false;
+            const hoy = new Date();
+            const currentYear = hoy.getFullYear();
+            const currentMonth = hoy.getMonth();
+
+            const start = parseLocalDate(fechaInicio);
+            const end = fechaFin ? parseLocalDate(fechaFin) : start;
+
+            if (isNaN(start.getTime())) return false;
+
+            const firstDayCurrentMonth = new Date(currentYear, currentMonth, 1);
+            const lastDayCurrentMonth = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59);
+
+            return (start <= lastDayCurrentMonth && end >= firstDayCurrentMonth);
+          }
+
+          function getEffectiveEmployeeStatus(emp) {
+            if (!emp) return 'Activo';
+            if (emp.estado === 'Cesado') return 'Cesado';
+            if (emp.estado === 'Vacaciones') return 'Vacaciones';
+
+            if (Array.isArray(vacations)) {
+              const hasVacationCurrentMonth = vacations.some(v => 
+                v.employeeId === emp.id && 
+                (v.estado === 'Aprobado' || !v.estado) &&
+                isVacationInCurrentMonth(v.fechaInicio, v.fechaFin)
+              );
+              if (hasVacationCurrentMonth) {
+                return 'Vacaciones';
+              }
+            }
+
+            return emp.estado || 'Activo';
+          }
+
           // Render Employee Status Badge
-          function renderStatusBadge(estado) {
+          function renderStatusBadge(statusOrEmp) {
+            const estado = (typeof statusOrEmp === 'object' && statusOrEmp !== null)
+              ? getEffectiveEmployeeStatus(statusOrEmp)
+              : statusOrEmp;
+
             if (estado === 'Activo') {
               return `
           <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
@@ -2710,8 +2763,8 @@
           </span>`;
             } else {
               return `
-          <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
-            <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+          <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20" title="Trabajador con vacaciones en el mes vigente">
+            <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
             Vacaciones
           </span>`;
             }
@@ -3071,7 +3124,7 @@
             </div>
           </td>
           <td class="py-3.5 px-4">
-            ${renderStatusBadge(emp.estado)}
+            ${renderStatusBadge(emp)}
           </td>
           <td class="py-3.5 px-4 text-right">
             <div class="flex items-center justify-end gap-1">
@@ -3831,21 +3884,15 @@
             const activeEmployees = employees.filter(e => e.estado !== 'Cesado');
             if (statTotal) statTotal.textContent = activeEmployees.length;
 
-            const todayStr = new Date().toISOString().split('T')[0];
-
             const vacacionesCount = employees.filter(emp => {
               if (emp.estado === 'Cesado') return false;
-              if (emp.estado === 'Vacaciones') return true;
-              return vacations.some(v => 
-                v.employeeId === emp.id && 
-                v.fechaInicio && 
-                v.fechaFin && 
-                todayStr >= v.fechaInicio && 
-                todayStr <= v.fechaFin
-              );
+              return getEffectiveEmployeeStatus(emp) === 'Vacaciones';
             }).length;
 
-            const activosCount = employees.filter(e => e.estado === 'Activo' && !vacations.some(v => v.employeeId === e.id && v.fechaInicio && v.fechaFin && todayStr >= v.fechaInicio && todayStr <= v.fechaFin)).length;
+            const activosCount = employees.filter(e => {
+              if (e.estado === 'Cesado') return false;
+              return getEffectiveEmployeeStatus(e) === 'Activo';
+            }).length;
 
             if (statActivos) statActivos.textContent = activosCount;
             if (statVacaciones) statVacaciones.textContent = vacacionesCount;
@@ -3981,7 +4028,7 @@
                   S/
                 </button>
               </div>
-              <div>${renderStatusBadge(emp.estado)}</div>
+              <div>${renderStatusBadge(emp)}</div>
             </div>
             <p class="text-sm font-medium text-blue-400 mt-1">${escapeHTML(emp.puesto)} • <span class="text-slate-400">${escapeHTML(emp.departamento)}</span></p>
             
@@ -5028,8 +5075,17 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(newVacation)
               });
+
+              if (isVacationInCurrentMonth(startVal, endVal) && selectedEmp.estado !== 'Cesado') {
+                selectedEmp.estado = 'Vacaciones';
+                await fetch(`/api/empleados/${selectedEmp.id}`, {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(selectedEmp)
+                });
+              }
             } catch (err) {
-              console.error("Error al guardar vacaciones:", err);
+              console.error("Error al guardar vacaciones o actualizar estado del empleado:", err);
             }
 
             await loadDataFromServer();
