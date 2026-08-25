@@ -1987,7 +1987,7 @@
                 const vacCalc = calculateContractVacations(emp.fechaInicioContrato, emp.fechaFinContrato, emp.esIndeterminado);
                 const empVacList = vacations.filter(v => v.employeeId === emp.id);
                 const diasGozados = empVacList.reduce((acc, curr) => acc + (parseInt(curr.dias) || 0), 0);
-                const diasDisponibles = Math.max(0, vacCalc.diasTotales - diasGozados);
+                const diasDisponibles = Math.max(0, vacCalc.diasVencidosCompleto - diasGozados);
                 const enablementInfo = getVacationEnablementInfo(emp.fechaInicioContrato);
 
                 return [
@@ -4632,7 +4632,7 @@
               .reduce((sum, v) => sum + v.dias, 0);
 
             const diasTotales = vacCalculated.diasTotales;
-            const diasDisponibles = Math.max(0, diasTotales - diasGozados);
+            const diasDisponibles = Math.max(0, vacCalculated.diasVencidosCompleto - diasGozados);
 
             // Period calculations
             const periodosTotalesGanados = vacCalculated.years; // 1 full period (30 days) per completed year
@@ -5047,7 +5047,7 @@
             const vacCalculated = calculateContractVacations(selectedEmp.fechaInicioContrato, selectedEmp.fechaFinContrato, selectedEmp.esIndeterminado);
             const empVacations = vacations.filter(v => v.employeeId === empId && v.estado === 'Aprobado');
             const diasGozadosActuales = empVacations.reduce((sum, v) => sum + v.dias, 0);
-            const diasDisponiblesActuales = vacCalculated.diasTotales - diasGozadosActuales;
+            const diasDisponiblesActuales = Math.max(0, vacCalculated.diasVencidosCompleto - diasGozadosActuales);
 
             if (calculatedDays > diasDisponiblesActuales) {
               if (!confirm(`Advertencia: El número de días solicitado (${calculatedDays}) supera los días disponibles del empleado (${diasDisponiblesActuales}). ¿Deseas guardar de todos modos?`)) {
