@@ -322,7 +322,7 @@
       </div>
 
       <!-- Balance Cards for Selected Employee -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
 
         <!-- CARD 1: Días Totales por Antigüedad -->
         <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg flex items-center gap-4">
@@ -378,7 +378,26 @@
           </div>
         </div>
 
-        <!-- CARD 4: Días Disponibles -->
+        <!-- CARD 4: Adelanto de Vacaciones -->
+        <div class="bg-slate-900 border border-amber-900/40 bg-gradient-to-br from-amber-950/20 to-slate-900 rounded-2xl p-5 shadow-lg flex items-center gap-4">
+          <div class="p-3.5 bg-amber-500/10 text-amber-400 rounded-xl border border-amber-500/20 shrink-0">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </div>
+          <div class="truncate">
+            <span class="block text-xs font-semibold text-amber-400 uppercase tracking-wider truncate">Adelanto Vacaciones</span>
+            <div class="flex items-baseline gap-1 mt-0.5">
+              <span id="vacation-stat-adelanto" class="text-2xl font-bold text-amber-400">0</span>
+              <span class="text-xs text-slate-400">días</span>
+            </div>
+            <span id="vacation-stat-adelanto-sub"
+              class="block text-[11px] text-slate-400 font-medium truncate mt-0.5">Sin derecho ganado aún</span>
+          </div>
+        </div>
+
+        <!-- CARD 5: Días Disponibles -->
         <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg flex items-center gap-4">
           <div class="p-3.5 bg-emerald-500/10 text-emerald-400 rounded-xl border border-emerald-500/20 shrink-0">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1978,6 +1997,7 @@
                   "PERÍODOS GANADOS CUMPLIDOS",
                   "DÍAS TOTALES ACUMULADOS",
                   "DÍAS GOZADOS",
+                  "DÍAS ADELANTADOS",
                   "DÍAS DISPONIBLES SALDO",
                   "PRÓXIMA FECHA HABILITACIÓN"
                 ]
@@ -1988,6 +2008,7 @@
                 const empVacList = vacations.filter(v => v.employeeId === emp.id);
                 const diasGozados = empVacList.reduce((acc, curr) => acc + (parseInt(curr.dias) || 0), 0);
                 const diasDisponibles = Math.max(0, vacCalc.diasVencidosCompleto - diasGozados);
+                const diasAdelantados = Math.max(0, diasGozados - vacCalc.diasVencidosCompleto);
                 const enablementInfo = getVacationEnablementInfo(emp.fechaInicioContrato);
 
                 return [
@@ -2000,6 +2021,7 @@
                   vacCalc.years,
                   vacCalc.diasTotales,
                   diasGozados,
+                  diasAdelantados,
                   diasDisponibles,
                   enablementInfo ? enablementInfo.fechaDestacada : '--'
                 ];
@@ -2007,7 +2029,7 @@
 
               const wsSaldos = XLSX.utils.aoa_to_sheet([...headersSaldos, ...rowsSaldos]);
               wsSaldos['!cols'] = [
-                { wch: 28 }, { wch: 14 }, { wch: 24 }, { wch: 20 }, { wch: 20 }, { wch: 22 }, { wch: 24 }, { wch: 22 }, { wch: 14 }, { wch: 22 }, { wch: 24 }
+                { wch: 28 }, { wch: 14 }, { wch: 24 }, { wch: 20 }, { wch: 20 }, { wch: 22 }, { wch: 24 }, { wch: 22 }, { wch: 14 }, { wch: 16 }, { wch: 22 }, { wch: 24 }
               ];
               XLSX.utils.book_append_sheet(wb, wsSaldos, "Resumen Saldos y Períodos");
 
@@ -2563,6 +2585,8 @@
           const vacationStatHabilitacion = document.getElementById('vacation-stat-habilitacion');
           const vacationStatHabilitacionSub = document.getElementById('vacation-stat-habilitacion-sub');
           const vacationStatGozados = document.getElementById('vacation-stat-gozados');
+          const vacationStatAdelanto = document.getElementById('vacation-stat-adelanto');
+          const vacationStatAdelantoSub = document.getElementById('vacation-stat-adelanto-sub');
           const vacationStatDisponibles = document.getElementById('vacation-stat-disponibles');
           const vacationsTableBody = document.getElementById('vacations-table-body');
           const vacationsEmptyState = document.getElementById('vacations-empty-state');
@@ -4609,8 +4633,10 @@
               vacationStatTotal.textContent = '0';
               vacationStatHabilitacion.textContent = '--/--/----';
               vacationStatHabilitacionSub.textContent = '--';
-              vacationStatGozados.textContent = '0';
-              vacationStatDisponibles.textContent = '0';
+              if (vacationStatGozados) vacationStatGozados.textContent = '0';
+              if (vacationStatAdelanto) vacationStatAdelanto.textContent = '0';
+              if (vacationStatAdelantoSub) vacationStatAdelantoSub.textContent = 'Sin adelanto';
+              if (vacationStatDisponibles) vacationStatDisponibles.textContent = '0';
               vacationsTableBody.innerHTML = '';
               vacationsEmptyState.classList.remove('hidden');
               vacationsEmptyState.classList.add('flex');
@@ -4633,6 +4659,7 @@
 
             const diasTotales = vacCalculated.diasTotales;
             const diasDisponibles = Math.max(0, vacCalculated.diasVencidosCompleto - diasGozados);
+            const diasAdelantados = Math.max(0, diasGozados - vacCalculated.diasVencidosCompleto);
 
             // Period calculations
             const periodosTotalesGanados = vacCalculated.years; // 1 full period (30 days) per completed year
@@ -4694,6 +4721,16 @@
             }
 
             vacationStatGozados.textContent = diasGozados;
+            if (vacationStatAdelanto) vacationStatAdelanto.textContent = diasAdelantados;
+            if (vacationStatAdelantoSub) {
+              if (diasAdelantados > 0) {
+                vacationStatAdelantoSub.textContent = `${diasAdelantados}d tomados sin derecho vencido`;
+                vacationStatAdelantoSub.className = "block text-[11px] text-amber-300 font-semibold truncate mt-0.5";
+              } else {
+                vacationStatAdelantoSub.textContent = '0d tomados por adelanto';
+                vacationStatAdelantoSub.className = "block text-[11px] text-slate-400 font-medium truncate mt-0.5";
+              }
+            }
             vacationStatDisponibles.textContent = diasDisponibles;
 
             // Render Period Chips Breakdown (D.Leg. N° 713 Compliance)
@@ -4768,7 +4805,19 @@
                     }
                   } else {
                     // Current Period in progress
-                    chipsHTML += `
+                    if (diasAdelantados > 0) {
+                      chipsHTML += `
+                <div class="flex flex-col gap-0.5 px-3 py-2 bg-amber-950/50 border border-amber-800/60 rounded-xl text-xs text-amber-300">
+                  <div class="flex items-center gap-2 font-semibold">
+                    <span class="w-2 h-2 rounded-full bg-amber-400 shrink-0 animate-pulse"></span>
+                    <span>${p.etiqueta}: <strong>${p.dias} días acumulados</strong> (${diasAdelantados}d tomados por adelanto)</span>
+                    <span class="px-1.5 py-0.2 bg-amber-500/20 text-amber-300 text-[10px] font-bold rounded border border-amber-500/30">ADELANTO EN GOCE</span>
+                  </div>
+                  <span class="text-[11px] text-amber-200/80 pl-4">El trabajador está haciendo uso de <strong>${diasAdelantados} días adelantados</strong> sin haber completado aún este período de servicio.</span>
+                </div>
+              `;
+                    } else {
+                      chipsHTML += `
                 <div class="flex flex-col gap-0.5 px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-xl text-xs text-slate-300">
                   <div class="flex items-center gap-2 font-semibold">
                     <span class="w-2 h-2 rounded-full bg-purple-400 shrink-0"></span>
@@ -4778,6 +4827,7 @@
                   <span class="text-[11px] text-slate-400 pl-4">Acumulación proporcional a 2.5 días/mes (Adquisición completa al ${p.fechaAdquisicion})</span>
                 </div>
               `;
+                    }
                   }
                 });
               }
