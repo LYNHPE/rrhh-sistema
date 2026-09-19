@@ -189,18 +189,21 @@
       <div class="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
         <!-- Quick Metrics -->
         <div class="flex items-center gap-3">
-          <div class="bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-center min-w-[100px]">
+          <button type="button" id="card-stat-total" onclick="setDirectoryStatusFilter('all')" title="Ver todos los trabajadores activos"
+            class="bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-center min-w-[100px] cursor-pointer select-none transition-all duration-200 hover:border-slate-700 hover:bg-slate-800/60 focus:outline-none">
             <span class="block text-xs font-medium text-slate-400">Total</span>
             <span id="stat-total" class="text-xl font-bold text-white">0</span>
-          </div>
-          <div class="bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-center min-w-[100px]">
+          </button>
+          <button type="button" id="card-stat-activos" onclick="setDirectoryStatusFilter('Activo')" title="Filtrar por trabajadores activos"
+            class="bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-center min-w-[100px] cursor-pointer select-none transition-all duration-200 hover:border-slate-700 hover:bg-slate-800/60 focus:outline-none">
             <span class="block text-xs font-medium text-slate-400">Activos</span>
             <span id="stat-activos" class="text-xl font-bold text-emerald-400">0</span>
-          </div>
-          <div class="bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-center min-w-[110px]">
+          </button>
+          <button type="button" id="card-stat-vacaciones" onclick="setDirectoryStatusFilter('Vacaciones')" title="Filtrar por trabajadores en vacaciones"
+            class="bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-center min-w-[110px] cursor-pointer select-none transition-all duration-200 hover:border-slate-700 hover:bg-slate-800/60 focus:outline-none">
             <span class="block text-xs font-medium text-slate-400">En Vacaciones</span>
             <span id="stat-vacaciones" class="text-xl font-bold text-amber-400">0</span>
-          </div>
+          </button>
         </div>
 
         <!-- Search Box & Action Button -->
@@ -1538,6 +1541,7 @@
           let currentRenewalEmpId = null;
           let tempFormPhotoBase64 = null;
           let pendingImportEmployees = [];
+          let currentDirectoryFilter = 'all'; // 'all', 'Activo', 'Vacaciones'
 
           // Global State Arrays
           let employees = [];
@@ -3064,11 +3068,47 @@
             tableBody.innerHTML = '';
 
             const activeEmployees = employees.filter(e => e.estado !== 'Cesado');
-            const listToRender = filteredList !== null ? filteredList : activeEmployees;
+            
+            let listToRender;
+            if (filteredList !== null) {
+              listToRender = filteredList;
+            } else {
+              const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
+              listToRender = activeEmployees.filter(emp => {
+                const effectiveStatus = getEffectiveEmployeeStatus(emp);
+                if (currentDirectoryFilter === 'Activo' && effectiveStatus !== 'Activo') return false;
+                if (currentDirectoryFilter === 'Vacaciones' && effectiveStatus !== 'Vacaciones') return false;
+
+                if (searchTerm) {
+                  return (
+                    (emp.nombre || '').toLowerCase().includes(searchTerm) ||
+                    (emp.dni || '').toLowerCase().includes(searchTerm) ||
+                    (emp.departamento || '').toLowerCase().includes(searchTerm) ||
+                    (emp.ruta || '').toLowerCase().includes(searchTerm) ||
+                    (emp.puesto || '').toLowerCase().includes(searchTerm)
+                  );
+                }
+                return true;
+              });
+            }
 
             if (listToRender.length === 0) {
               emptyState.classList.remove('hidden');
               emptyState.classList.add('flex');
+              const emptyTitle = emptyState.querySelector('h3');
+              const emptyText = emptyState.querySelector('p');
+              if (emptyTitle && emptyText) {
+                if (currentDirectoryFilter === 'Vacaciones') {
+                  emptyTitle.textContent = 'No hay trabajadores en vacaciones';
+                  emptyText.textContent = 'No se encontraron trabajadores que se encuentren actualmente en periodo vacacional.';
+                } else if (currentDirectoryFilter === 'Activo') {
+                  emptyTitle.textContent = 'No hay trabajadores activos';
+                  emptyText.textContent = 'No se encontraron trabajadores con estatus activo.';
+                } else {
+                  emptyTitle.textContent = 'No se encontraron trabajadores';
+                  emptyText.textContent = 'No existen registros que coincidan con tu búsqueda. Intenta con otro término o agrega un nuevo trabajador.';
+                }
+              }
             } else {
               emptyState.classList.add('hidden');
               emptyState.classList.remove('flex');
@@ -3904,6 +3944,48 @@
               .replace(/'/g, '&#039;');
           }
 
+          function setDirectoryStatusFilter(status) {
+            if (currentDirectoryFilter === status && status !== 'all') {
+              currentDirectoryFilter = 'all';
+            } else {
+              currentDirectoryFilter = status;
+            }
+            renderEmployees();
+          }
+          window.setDirectoryStatusFilter = setDirectoryStatusFilter;
+
+          function updateStatCardsUI() {
+            const cardTotal = document.getElementById('card-stat-total');
+            const cardActivos = document.getElementById('card-stat-activos');
+            const cardVacaciones = document.getElementById('card-stat-vacaciones');
+
+            const baseClass = "rounded-xl px-4 py-2.5 text-center cursor-pointer select-none transition-all duration-200 focus:outline-none border";
+
+            if (cardTotal) {
+              if (currentDirectoryFilter === 'all') {
+                cardTotal.className = `${baseClass} bg-slate-800/90 border-blue-500/50 ring-2 ring-blue-500/20 shadow-md min-w-[100px]`;
+              } else {
+                cardTotal.className = `${baseClass} bg-slate-900 border-slate-800 hover:border-slate-700 hover:bg-slate-800/60 opacity-80 hover:opacity-100 min-w-[100px]`;
+              }
+            }
+
+            if (cardActivos) {
+              if (currentDirectoryFilter === 'Activo') {
+                cardActivos.className = `${baseClass} bg-emerald-950/40 border-emerald-500/60 ring-2 ring-emerald-500/30 shadow-md shadow-emerald-500/10 min-w-[100px]`;
+              } else {
+                cardActivos.className = `${baseClass} bg-slate-900 border-slate-800 hover:border-slate-700 hover:bg-slate-800/60 opacity-80 hover:opacity-100 min-w-[100px]`;
+              }
+            }
+
+            if (cardVacaciones) {
+              if (currentDirectoryFilter === 'Vacaciones') {
+                cardVacaciones.className = `${baseClass} bg-amber-950/40 border-amber-500/60 ring-2 ring-amber-500/30 shadow-md shadow-amber-500/10 min-w-[110px]`;
+              } else {
+                cardVacaciones.className = `${baseClass} bg-slate-900 border-slate-800 hover:border-slate-700 hover:bg-slate-800/60 opacity-80 hover:opacity-100 min-w-[110px]`;
+              }
+            }
+          }
+
           function updateStats() {
             const activeEmployees = employees.filter(e => e.estado !== 'Cesado');
             if (statTotal) statTotal.textContent = activeEmployees.length;
@@ -3920,20 +4002,13 @@
 
             if (statActivos) statActivos.textContent = activosCount;
             if (statVacaciones) statVacaciones.textContent = vacacionesCount;
+
+            updateStatCardsUI();
           }
 
           // Search filter for main Directory
-          searchInput.addEventListener('input', (e) => {
-            const searchTerm = e.target.value.toLowerCase().trim();
-            const activeEmployees = employees.filter(emp => emp.estado !== 'Cesado');
-            const filtered = activeEmployees.filter(emp =>
-              (emp.nombre || '').toLowerCase().includes(searchTerm) ||
-              (emp.dni || '').toLowerCase().includes(searchTerm) ||
-              (emp.departamento || '').toLowerCase().includes(searchTerm) ||
-              (emp.ruta || '').toLowerCase().includes(searchTerm) ||
-              (emp.puesto || '').toLowerCase().includes(searchTerm)
-            );
-            renderEmployees(filtered);
+          searchInput.addEventListener('input', () => {
+            renderEmployees();
           });
 
           // Search filter for Cesados module
