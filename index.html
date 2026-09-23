@@ -3612,31 +3612,25 @@
             // Row 1: Title
             const titleRow = [`PLANILLA ${monthName} ${currentTareoYear}`];
 
-            // Row 2: Headers 1 (Day Names & Code Descriptions)
+            // Row 2: Headers 1 (Day Names ONLY)
             const headerRow1 = ["LEGAJO", "APELLIDOS Y NOMBRES"];
             for (let d = 1; d <= daysInMonth; d++) {
               const dateObj = new Date(currentTareoYear, currentTareoMonth, d);
               headerRow1.push(TAREO_DAY_NAMES[dateObj.getDay()]);
             }
-            TAREO_CODES.forEach(item => headerRow1.push(item.title));
-            headerRow1.push("TOTAL DÍAS");
 
-            // Row 3: Headers 2 (Dates 1-Ago, 2-Ago... & Short Code Keys)
+            // Row 3: Headers 2 (Dates 1-Ago, 2-Ago ONLY)
             const headerRow2 = ["", ""];
             for (let d = 1; d <= daysInMonth; d++) {
               headerRow2.push(`${d}-${monthAbbr}`);
             }
-            TAREO_CODES.forEach(item => headerRow2.push(item.code));
-            headerRow2.push("TOTAL");
 
-            // Data Rows pre-filled with active workers
+            // Data Rows pre-filled with active workers and empty day cells ONLY
             const rows = activeEmployees.map((emp, idx) => {
               const rowData = [idx + 1, emp.nombre];
               for (let d = 1; d <= daysInMonth; d++) {
                 rowData.push('');
               }
-              TAREO_CODES.forEach(() => rowData.push(0));
-              rowData.push(0);
               return rowData;
             });
 
@@ -3649,8 +3643,6 @@
               { wch: 32 }   // APELLIDOS Y NOMBRES
             ];
             for (let d = 1; d <= daysInMonth; d++) colWidths.push({ wch: 6 });
-            TAREO_CODES.forEach(() => colWidths.push({ wch: 6 }));
-            colWidths.push({ wch: 8 });
 
             ws['!cols'] = colWidths;
 
