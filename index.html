@@ -136,6 +136,16 @@
           <span>Control de Vacaciones</span>
         </button>
 
+        <!-- Módulo: Tareo -->
+        <button id="tab-btn-tareo" onclick="switchTab('tareo')"
+          class="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition cursor-pointer text-slate-400 hover:text-white hover:bg-slate-800/60">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+          </svg>
+          <span>Tareo</span>
+        </button>
+
         <!-- Módulo: Cesados -->
         <button id="tab-btn-cesados" onclick="switchTab('cesados')"
           class="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition cursor-pointer text-slate-400 hover:text-white hover:bg-slate-800/60">
@@ -564,6 +574,158 @@
           <h3 class="text-base font-semibold text-slate-200">No hay trabajadores cesados</h3>
           <p class="text-sm text-slate-400 mt-1 max-w-sm">Todos los trabajadores actuales se encuentran en estado Activo
             o Vacaciones.</p>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- MODULE 4: TAREO MANAGEMENT (HOJA DE CÁLCULO DE ASISTENCIAS) -->
+    <div id="module-tareo" class="hidden flex-col gap-6">
+      <!-- Toolbar for Tareo -->
+      <div class="flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-4 bg-slate-900/80 border border-slate-800 p-4 rounded-2xl shadow-lg">
+        <!-- Month & Year Selector + Title Banner -->
+        <div class="flex flex-wrap items-center gap-3">
+          <div class="flex items-center gap-2 bg-slate-950/80 border border-slate-800 rounded-xl px-3 py-1.5">
+            <svg class="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <label for="select-tareo-month" class="text-xs font-medium text-slate-400">Mes:</label>
+            <select id="select-tareo-month" onchange="onTareoPeriodChange()"
+              class="bg-slate-900 text-white text-xs font-semibold rounded-lg px-2 py-1 border border-slate-700 focus:outline-none focus:ring-2 focus:ring-purple-500 cursor-pointer">
+              <option value="0">Enero</option>
+              <option value="1">Febrero</option>
+              <option value="2">Marzo</option>
+              <option value="3">Abril</option>
+              <option value="4">Mayo</option>
+              <option value="5">Junio</option>
+              <option value="6">Julio</option>
+              <option value="7" selected>Agosto</option>
+              <option value="8">Setiembre</option>
+              <option value="9">Octubre</option>
+              <option value="10">Noviembre</option>
+              <option value="11">Diciembre</option>
+            </select>
+
+            <label for="select-tareo-year" class="text-xs font-medium text-slate-400 ml-1">Año:</label>
+            <select id="select-tareo-year" onchange="onTareoPeriodChange()"
+              class="bg-slate-900 text-white text-xs font-semibold rounded-lg px-2 py-1 border border-slate-700 focus:outline-none focus:ring-2 focus:ring-purple-500 cursor-pointer">
+              <option value="2024">2024</option>
+              <option value="2025">2025</option>
+              <option value="2026" selected>2026</option>
+              <option value="2027">2027</option>
+            </select>
+          </div>
+
+          <!-- Banner Title matching Image 2 -->
+          <div class="px-4 py-1.5 bg-cyan-600/30 border border-cyan-500/40 text-cyan-200 rounded-xl font-bold text-sm tracking-wide shadow-sm flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+            <span id="tareo-banner-title">PLANILLA AGOSTO 2026</span>
+          </div>
+        </div>
+
+        <!-- Quick Code Legend Pill -->
+        <div class="flex flex-wrap items-center gap-1.5 text-[10px] font-medium bg-slate-950/80 p-2 rounded-xl border border-slate-800">
+          <span class="text-slate-400 mr-1 font-semibold text-[11px]">Leyenda:</span>
+          <span class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30" title="Asistencia Normal">A: Asistió</span>
+          <span class="px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30" title="Dominical / Descanso Semanal">DL: Dominical</span>
+          <span class="px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30" title="Feriado No Laborado">FE: Feriado</span>
+          <span class="px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30" title="Falta Injustificada">F: Falta</span>
+          <span class="px-1.5 py-0.5 rounded bg-yellow-500/20 text-yellow-300 border border-yellow-500/30" title="Permiso Remunerado/Sin Goce">P: Permiso</span>
+          <span class="px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-300 border border-orange-500/30" title="Suspensión Disciplinaria">SP: Suspendido</span>
+          <span class="px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 border border-sky-500/30" title="Descanso Compensatorio">D: Descanso</span>
+          <span class="px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30" title="Descanso Médico (1-20 días)">DM: D. Médico</span>
+          <span class="px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30" title="Subsidio por Incapacidad (+21 días)">SB: Subsidio (+21)</span>
+          <span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30" title="Vacaciones Pagadas">VC: Vacaciones</span>
+          <span class="px-1.5 py-0.5 rounded bg-teal-500/20 text-teal-300 border border-teal-500/30" title="Licencia por Paternidad">LP: Paternidad</span>
+          <span class="px-1.5 py-0.5 rounded bg-pink-500/20 text-pink-300 border border-pink-500/30" title="Licencia por Maternidad">LM: Maternidad</span>
+          <span class="px-1.5 py-0.5 rounded bg-stone-500/20 text-stone-300 border border-stone-500/30" title="Retiro / Cese">R: Retiro</span>
+          <span class="px-1.5 py-0.5 rounded bg-lime-500/20 text-lime-300 border border-lime-500/30" title="Ingreso / Alta">IN: Ingreso</span>
+          <span class="px-1.5 py-0.5 rounded bg-violet-500/20 text-violet-300 border border-violet-500/30" title="Licencia por Familiar Enfermo">LF: Fam. Enfermo</span>
+          <span class="px-1.5 py-0.5 rounded bg-slate-500/20 text-slate-300 border border-slate-500/30" title="Licencia por Fallecimiento Familiar">FF: Fallec. Fam.</span>
+        </div>
+
+        <!-- Search Box & Actions -->
+        <div class="flex flex-wrap items-center gap-2">
+          <!-- Search Box -->
+          <div class="relative min-w-[160px]">
+            <input type="text" id="search-input-tareo" oninput="renderTareoModule()"
+              placeholder="Buscar en tareo..."
+              class="w-full pl-8 pr-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50">
+            <svg class="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+
+          <!-- Auto-Fill Button -->
+          <button onclick="autoFillTareoMonth()" title="Llenar automáticamente días laborables (A), domingos (DL) y cruzar vacaciones aprobadas (V)"
+            class="flex items-center gap-1.5 px-3 py-1.5 text-xs text-purple-300 bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/30 rounded-xl transition cursor-pointer font-semibold">
+            <svg class="w-3.5 h-3.5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+            <span>Auto-Llenar</span>
+          </button>
+
+          <!-- Clear Month Button -->
+          <button onclick="clearTareoMonth()" title="Limpiar y borrar toda la información de tareo del mes seleccionado"
+            class="flex items-center gap-1.5 px-3 py-1.5 text-xs text-rose-300 bg-rose-600/20 hover:bg-rose-600/30 border border-rose-500/30 rounded-xl transition cursor-pointer font-semibold">
+            <svg class="w-3.5 h-3.5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+            <span>Limpiar</span>
+          </button>
+
+          <!-- Import Excel Button -->
+          <input type="file" id="input-tareo-excel-file" accept=".xlsx, .xls, .csv" class="hidden" onchange="importTareoExcel(event)">
+          <button onclick="triggerTareoImport()" title="Importar hoja de cálculo de tareo desde Excel (.xlsx, .xls, .csv)"
+            class="flex items-center gap-1.5 px-3 py-1.5 text-xs text-teal-300 bg-teal-600/20 hover:bg-teal-600/30 border border-teal-500/30 rounded-xl transition cursor-pointer font-semibold">
+            <svg class="w-3.5 h-3.5 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+            </svg>
+            <span>Importar</span>
+          </button>
+
+          <!-- Save Button -->
+          <button onclick="saveTareoToStorage(true)" title="Guardar cambios de tareo en el servidor"
+            class="flex items-center gap-1.5 px-3 py-1.5 text-xs text-emerald-300 bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/30 rounded-xl transition cursor-pointer font-semibold">
+            <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+            <span>Guardar</span>
+          </button>
+
+          <!-- Export Tareo Excel Button -->
+          <button onclick="exportTareoExcel()" title="Exportar la hoja de tareo en formato Excel (.xlsx)"
+            class="flex items-center gap-1.5 px-3 py-1.5 text-xs text-blue-300 bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/30 rounded-xl transition cursor-pointer font-semibold">
+            <svg class="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            <span>Exportar Excel</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Tareo Spreadsheet Table Container -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl shadow-xl overflow-hidden flex-grow flex flex-col">
+        <div class="overflow-x-auto relative">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead id="tareo-table-head">
+              <!-- Dynamically built headers matching Image 2 -->
+            </thead>
+            <tbody id="tareo-table-body" class="divide-y divide-slate-800/60 font-mono text-[11px]">
+              <!-- Dynamic Rows Injected Here -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Empty State View for Tareo -->
+        <div id="tareo-empty-state" class="hidden flex-col items-center justify-center py-16 px-4 text-center">
+          <div class="p-4 bg-slate-800/50 rounded-full text-slate-400 mb-3">
+            <svg class="w-8 h-8 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+          </div>
+          <h3 class="text-base font-semibold text-slate-200">No hay registros de tareo</h3>
+          <p class="text-sm text-slate-400 mt-1 max-w-sm">No existen trabajadores para este periodo o tu búsqueda no arrojó resultados.</p>
         </div>
       </div>
     </div>
@@ -1534,6 +1696,7 @@
           // Storage Keys (Standard & Multi-Browser Compatible)
           const STORAGE_KEY_EMPLOYEES = 'rrhh_employees_data_v7';
           const STORAGE_KEY_VACATIONS = 'rrhh_vacations_data_v7';
+          const STORAGE_KEY_TAREO = 'rrhh_tareo_data_v1';
 
           // Global Editing State & Active Profile ID
           let editingEmployeeId = null;
@@ -1542,6 +1705,11 @@
           let tempFormPhotoBase64 = null;
           let pendingImportEmployees = [];
           let currentDirectoryFilter = 'all'; // 'all', 'Activo', 'Vacaciones'
+
+          // Global Tareo State
+          let tareoData = {};
+          let currentTareoMonth = new Date().getMonth();
+          let currentTareoYear = new Date().getFullYear();
 
           // Global State Arrays
           let employees = [];
@@ -1734,13 +1902,17 @@
           // FULL-STACK SERVER ASYNC PERSISTENCE (EXPRESS BACKEND / REST API)
           async function loadDataFromServer() {
             try {
-              const [empRes, vacRes] = await Promise.all([
+              const [empRes, vacRes, tarRes] = await Promise.all([
                 fetch('/api/empleados').catch(err => {
                   console.error("Error al conectar con /api/empleados:", err);
                   return null;
                 }),
                 fetch('/api/vacaciones').catch(err => {
                   console.error("Error al conectar con /api/vacaciones:", err);
+                  return null;
+                }),
+                fetch('/api/tareo').catch(err => {
+                  console.error("Error al conectar con /api/tareo:", err);
                   return null;
                 })
               ]);
@@ -1756,6 +1928,16 @@
               } else if (vacRes) {
                 console.warn(`Servidor retornó respuesta no OK para vacaciones: ${vacRes.status}`);
               }
+
+              if (tarRes && tarRes.ok) {
+                tareoData = await tarRes.json();
+              } else {
+                try {
+                  const localTareo = localStorage.getItem(STORAGE_KEY_TAREO);
+                  if (localTareo) tareoData = JSON.parse(localTareo);
+                } catch(e) {}
+              }
+              if (!tareoData || typeof tareoData !== 'object') tareoData = {};
             } catch (err) {
               console.error("Error general al sincronizar datos desde el servidor:", err);
             } finally {
@@ -1809,6 +1991,7 @@
               renderCesadosModule();
               populateEmployeeDropdowns();
               renderVacationModule();
+              renderTareoModule();
             }
           }
 
@@ -2092,6 +2275,8 @@
                 alert("Error: La librería XLSX no está cargada.");
               }
               showToast("¡Copia de Trabajadores Cesados exportada en Excel!", "success");
+            } else if (moduleType === 'tareo') {
+              exportTareoExcel();
             }
           }
 
@@ -2102,7 +2287,8 @@
                 version: "7.0",
                 fechaExportacion: new Date().toISOString(),
                 employees: employees,
-                vacations: vacations
+                vacations: vacations,
+                tareo: tareoData
               };
 
               const jsonStr = JSON.stringify(backupObj, null, 2);
@@ -2669,7 +2855,7 @@
             }
           });
 
-          // TAB SWITCHING LOGIC (Employees, Vacations, Cesados)
+          // TAB SWITCHING LOGIC (Employees, Vacations, Tareo, Cesados)
           let currentActiveTab = 'employees';
 
           function switchTab(tabName) {
@@ -2677,33 +2863,607 @@
 
             const modEmployees = document.getElementById('module-employees');
             const modVacations = document.getElementById('module-vacations');
+            const modTareo = document.getElementById('module-tareo');
             const modCesados = document.getElementById('module-cesados');
 
             const btnEmp = document.getElementById('tab-btn-employees');
             const btnVac = document.getElementById('tab-btn-vacations');
+            const btnTar = document.getElementById('tab-btn-tareo');
             const btnCes = document.getElementById('tab-btn-cesados');
 
-            modEmployees.classList.add('hidden');
-            modVacations.classList.add('hidden');
-            modCesados.classList.add('hidden');
+            if (modEmployees) modEmployees.classList.add('hidden');
+            if (modVacations) modVacations.classList.add('hidden');
+            if (modTareo) modTareo.classList.add('hidden');
+            if (modCesados) modCesados.classList.add('hidden');
 
-            btnEmp.className = "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition cursor-pointer text-slate-400 hover:text-white hover:bg-slate-800/60";
-            btnVac.className = "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition cursor-pointer text-slate-400 hover:text-white hover:bg-slate-800/60";
-            btnCes.className = "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition cursor-pointer text-slate-400 hover:text-white hover:bg-slate-800/60";
+            const inactiveClass = "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition cursor-pointer text-slate-400 hover:text-white hover:bg-slate-800/60";
+            if (btnEmp) btnEmp.className = inactiveClass;
+            if (btnVac) btnVac.className = inactiveClass;
+            if (btnTar) btnTar.className = inactiveClass;
+            if (btnCes) btnCes.className = inactiveClass;
 
             if (tabName === 'employees') {
-              modEmployees.classList.remove('hidden');
-              btnEmp.className = "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition cursor-pointer bg-blue-600 text-white shadow-md shadow-blue-600/20";
+              if (modEmployees) modEmployees.classList.remove('hidden');
+              if (btnEmp) btnEmp.className = "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition cursor-pointer bg-blue-600 text-white shadow-md shadow-blue-600/20";
               renderEmployees();
             } else if (tabName === 'vacations') {
-              modVacations.classList.remove('hidden');
-              btnVac.className = "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition cursor-pointer bg-emerald-600 text-white shadow-md shadow-emerald-600/20";
+              if (modVacations) modVacations.classList.remove('hidden');
+              if (btnVac) btnVac.className = "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition cursor-pointer bg-emerald-600 text-white shadow-md shadow-emerald-600/20";
               populateEmployeeDropdowns();
               renderVacationModule();
+            } else if (tabName === 'tareo') {
+              if (modTareo) modTareo.classList.remove('hidden');
+              if (btnTar) btnTar.className = "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition cursor-pointer bg-purple-600 text-white shadow-md shadow-purple-600/20";
+              onTareoPeriodChange();
             } else if (tabName === 'cesados') {
-              modCesados.classList.remove('hidden');
-              btnCes.className = "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition cursor-pointer bg-rose-600 text-white shadow-md shadow-rose-600/20";
+              if (modCesados) modCesados.classList.remove('hidden');
+              if (btnCes) btnCes.className = "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition cursor-pointer bg-rose-600 text-white shadow-md shadow-rose-600/20";
               renderCesadosModule();
+            }
+          }
+
+          // ==========================================
+          // TAREO MODULE LOGIC (HOJA DE CÁLCULO)
+          // ==========================================
+
+          // ==========================================
+          // TAREO MODULE LOGIC (HOJA DE CÁLCULO DE ASISTENCIAS)
+          // ==========================================
+
+          const TAREO_MONTH_NAMES = [
+            'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+            'Julio', 'Agosto', 'Setiembre', 'Octubre', 'Noviembre', 'Diciembre'
+          ];
+
+          const TAREO_DAY_NAMES = ['DO', 'LU', 'MA', 'MI', 'JU', 'VI', 'SA'];
+
+          // 16 Standardized Attendance Status Codes from Official Planilla Tareo
+          const TAREO_CODES = [
+            { code: 'R', label: 'R - Retiro', title: 'Retiro', headBg: 'bg-stone-950/90 text-stone-300', sumBg: 'bg-stone-950/40 text-stone-400', bg: 'bg-stone-500/20 text-stone-300 border-stone-500/40' },
+            { code: 'A', label: 'A - Asistió', title: 'ASISTIO', headBg: 'bg-emerald-950/90 text-emerald-300', sumBg: 'bg-emerald-950/40 text-emerald-400', bg: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' },
+            { code: 'DL', label: 'DL - Dominical', title: 'DOMINICAL', headBg: 'bg-blue-950/90 text-blue-300', sumBg: 'bg-blue-950/40 text-blue-400', bg: 'bg-blue-500/20 text-blue-300 border-blue-500/40' },
+            { code: 'FE', label: 'FE - Feriado', title: 'FERIADO', headBg: 'bg-cyan-950/90 text-cyan-300', sumBg: 'bg-cyan-950/40 text-cyan-400', bg: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40' },
+            { code: 'F', label: 'F - Falta', title: 'FALTA', headBg: 'bg-rose-950/90 text-rose-300', sumBg: 'bg-rose-950/40 text-rose-400', bg: 'bg-rose-500/20 text-rose-300 border-rose-500/40' },
+            { code: 'P', label: 'P - Permiso', title: 'PERMISO', headBg: 'bg-yellow-950/90 text-yellow-300', sumBg: 'bg-yellow-950/40 text-yellow-400', bg: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/40' },
+            { code: 'SP', label: 'SP - Suspendido', title: 'SUSPENDIDO', headBg: 'bg-orange-950/90 text-orange-300', sumBg: 'bg-orange-950/40 text-orange-400', bg: 'bg-orange-500/20 text-orange-300 border-orange-500/40' },
+            { code: 'D', label: 'D - Descanso', title: 'DESCANSO', headBg: 'bg-sky-950/90 text-sky-300', sumBg: 'bg-sky-950/40 text-sky-400', bg: 'bg-sky-500/20 text-sky-300 border-sky-500/40' },
+            { code: 'DM', label: 'DM - D. Médico', title: 'DESCANSO MEDICO', headBg: 'bg-purple-950/90 text-purple-300', sumBg: 'bg-purple-950/40 text-purple-400', bg: 'bg-purple-500/20 text-purple-300 border-purple-500/40' },
+            { code: 'SB', label: 'SB - Subsidio (+21)', title: 'SUBSIDIO (+21 DM)', headBg: 'bg-indigo-950/90 text-indigo-300', sumBg: 'bg-indigo-950/40 text-indigo-400', bg: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40' },
+            { code: 'VC', label: 'VC - Vacaciones', title: 'VACACIONES', headBg: 'bg-amber-950/90 text-amber-300', sumBg: 'bg-amber-950/40 text-amber-400', bg: 'bg-amber-500/20 text-amber-300 border-amber-500/40' },
+            { code: 'LP', label: 'LP - Paternidad', title: 'PATERNIDAD', headBg: 'bg-teal-950/90 text-teal-300', sumBg: 'bg-teal-950/40 text-teal-400', bg: 'bg-teal-500/20 text-teal-300 border-teal-500/40' },
+            { code: 'LM', label: 'LM - Maternidad', title: 'MATERNIDAD', headBg: 'bg-pink-950/90 text-pink-300', sumBg: 'bg-pink-950/40 text-pink-400', bg: 'bg-pink-500/20 text-pink-300 border-pink-500/40' },
+            { code: 'IN', label: 'IN - Ingreso', title: 'INGRESO', headBg: 'bg-lime-950/90 text-lime-300', sumBg: 'bg-lime-950/40 text-lime-400', bg: 'bg-lime-500/20 text-lime-300 border-lime-500/40' },
+            { code: 'LF', label: 'LF - Fam. Enfermo', title: 'FAMILIAR ENFERMO', headBg: 'bg-violet-950/90 text-violet-300', sumBg: 'bg-violet-950/40 text-violet-400', bg: 'bg-violet-500/20 text-violet-300 border-violet-500/40' },
+            { code: 'FF', label: 'FF - Fallec. Fam.', title: 'FALLECIMIENTO FAMILIAR', headBg: 'bg-slate-800 text-slate-300', sumBg: 'bg-slate-900/40 text-slate-400', bg: 'bg-slate-500/20 text-slate-300 border-slate-500/40' }
+          ];
+
+          function getTareoPeriodKey() {
+            const m = String(currentTareoMonth + 1).padStart(2, '0');
+            return `${currentTareoYear}-${m}`;
+          }
+
+          function onTareoPeriodChange() {
+            const selectMonth = document.getElementById('select-tareo-month');
+            const selectYear = document.getElementById('select-tareo-year');
+            const bannerTitle = document.getElementById('tareo-banner-title');
+
+            if (selectMonth) currentTareoMonth = parseInt(selectMonth.value, 10);
+            if (selectYear) currentTareoYear = parseInt(selectYear.value, 10);
+
+            if (bannerTitle) {
+              bannerTitle.textContent = `PLANILLA ${TAREO_MONTH_NAMES[currentTareoMonth].toUpperCase()} ${currentTareoYear}`;
+            }
+
+            renderTareoModule();
+          }
+
+          function renderTareoModule() {
+            const tableHead = document.getElementById('tareo-table-head');
+            const tableBody = document.getElementById('tareo-table-body');
+            const emptyState = document.getElementById('tareo-empty-state');
+            const searchInput = document.getElementById('search-input-tareo');
+            const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
+
+            if (!tableHead || !tableBody) return;
+
+            const periodKey = getTareoPeriodKey();
+            if (!tareoData[periodKey]) {
+              tareoData[periodKey] = {};
+            }
+
+            const activeEmployees = employees.filter(e => e.estado !== 'Cesado');
+            const filteredEmployees = activeEmployees.filter(emp => {
+              if (!searchTerm) return true;
+              return (
+                (emp.nombre || '').toLowerCase().includes(searchTerm) ||
+                (emp.dni || '').toLowerCase().includes(searchTerm) ||
+                (emp.departamento || '').toLowerCase().includes(searchTerm) ||
+                (emp.puesto || '').toLowerCase().includes(searchTerm)
+              );
+            });
+
+            if (filteredEmployees.length === 0) {
+              tableHead.innerHTML = '';
+              tableBody.innerHTML = '';
+              if (emptyState) {
+                emptyState.classList.remove('hidden');
+                emptyState.classList.add('flex');
+              }
+              return;
+            } else {
+              if (emptyState) {
+                emptyState.classList.add('hidden');
+                emptyState.classList.remove('flex');
+              }
+            }
+
+            const daysInMonth = new Date(currentTareoYear, currentTareoMonth + 1, 0).getDate();
+            const monthAbbr = TAREO_MONTH_NAMES[currentTareoMonth].substring(0, 3);
+
+            // 1. Build Table Header (2 Rows matching official Excel Planilla)
+            let headHTML1 = `<tr class="bg-slate-950 border-b border-slate-800 text-[11px] font-bold text-slate-300">`;
+            headHTML1 += `<th scope="col" class="py-2.5 px-3 sticky left-0 z-20 bg-slate-950 border-r border-slate-800 min-w-[50px] text-center">LEGAJO</th>`;
+            headHTML1 += `<th scope="col" class="py-2.5 px-3 sticky left-[50px] z-20 bg-slate-950 border-r border-slate-800 min-w-[200px]">APELLIDOS Y NOMBRES</th>`;
+            headHTML1 += `<th scope="col" class="py-2.5 px-3 border-r border-slate-800 min-w-[130px]">DEPARTAMENTO</th>`;
+
+            for (let d = 1; d <= daysInMonth; d++) {
+              const dateObj = new Date(currentTareoYear, currentTareoMonth, d);
+              const dayOfWeek = dateObj.getDay(); // 0 = Sunday, 6 = Saturday
+              const dayAbbr = TAREO_DAY_NAMES[dayOfWeek];
+              const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+
+              const weekendHeaderClass = isWeekend
+                ? 'bg-emerald-950/70 text-emerald-300 border-emerald-800/40'
+                : 'bg-slate-950 text-slate-300 border-slate-800/60';
+
+              headHTML1 += `<th scope="col" class="py-1 px-1 text-center font-bold text-[10px] border-r border-b ${weekendHeaderClass}">${dayAbbr}</th>`;
+            }
+
+            // Render Summary Headers for all 16 Attendance Status Codes
+            TAREO_CODES.forEach(item => {
+              headHTML1 += `<th scope="col" class="py-2.5 px-1.5 text-center border-r border-slate-800 min-w-[38px] ${item.headBg}" title="${item.title}">${item.code}</th>`;
+            });
+            headHTML1 += `<th scope="col" class="py-2.5 px-2 text-center bg-slate-900 text-slate-100 min-w-[45px]" title="Total Días Registrados">TOTAL</th>`;
+            headHTML1 += `</tr>`;
+
+            // Row 2 of header (Dates e.g., 1-Ago, 2-Ago...)
+            let headHTML2 = `<tr class="bg-slate-950 border-b border-slate-800 text-[10px] text-slate-400 font-semibold">`;
+            headHTML2 += `<th class="sticky left-0 z-20 bg-slate-950 border-r border-slate-800"></th>`;
+            headHTML2 += `<th class="sticky left-[50px] z-20 bg-slate-950 border-r border-slate-800"></th>`;
+            headHTML2 += `<th class="border-r border-slate-800"></th>`;
+
+            for (let d = 1; d <= daysInMonth; d++) {
+              const dateObj = new Date(currentTareoYear, currentTareoMonth, d);
+              const dayOfWeek = dateObj.getDay();
+              const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+              const weekendHeaderClass = isWeekend
+                ? 'bg-emerald-950/70 text-emerald-300 border-emerald-800/40'
+                : 'bg-slate-950 text-slate-400 border-slate-800/60';
+
+              headHTML2 += `<th class="py-1 px-1 text-center border-r ${weekendHeaderClass}">${d}-${monthAbbr}</th>`;
+            }
+            TAREO_CODES.forEach(item => {
+              headHTML2 += `<th class="border-r border-slate-800 ${item.headBg}"></th>`;
+            });
+            headHTML2 += `<th class="bg-slate-900"></th>`;
+            headHTML2 += `</tr>`;
+
+            tableHead.innerHTML = headHTML1 + headHTML2;
+
+            // 2. Build Body Rows
+            tableBody.innerHTML = '';
+            const periodRecords = tareoData[periodKey] || {};
+
+            filteredEmployees.forEach((emp, index) => {
+              if (!periodRecords[emp.id]) {
+                periodRecords[emp.id] = {};
+              }
+              const empRecord = periodRecords[emp.id];
+
+              const tr = document.createElement('tr');
+              tr.className = "hover:bg-slate-800/50 transition border-b border-slate-800/60";
+
+              let rowHTML = `<td class="py-2 px-2 text-center sticky left-0 z-10 bg-slate-950 border-r border-slate-800 font-bold text-slate-400">${index + 1}</td>`;
+              rowHTML += `<td class="py-2 px-3 sticky left-[50px] z-10 bg-slate-900/90 border-r border-slate-800 font-semibold text-blue-200 truncate max-w-[200px]" title="${escapeHTML(emp.nombre)}">${escapeHTML(emp.nombre)}</td>`;
+              rowHTML += `<td class="py-2 px-2 border-r border-slate-800 text-slate-400 truncate max-w-[130px]">${escapeHTML(emp.departamento || 'OPERACIONES')}</td>`;
+
+              for (let d = 1; d <= daysInMonth; d++) {
+                const dateObj = new Date(currentTareoYear, currentTareoMonth, d);
+                const dayOfWeek = dateObj.getDay();
+                const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+
+                let cellVal = empRecord[d] !== undefined ? empRecord[d] : '';
+
+                // Style classes per attendance code
+                let matchedCodeObj = TAREO_CODES.find(c => c.code === cellVal || (c.code === 'VC' && cellVal === 'V'));
+                let badgeClass = matchedCodeObj ? `${matchedCodeObj.bg} font-bold` : "bg-slate-950 text-slate-600 border-slate-800/40";
+
+                const cellBgClass = isWeekend ? 'bg-emerald-950/20' : '';
+
+                let optionsHTML = `<option value="" ${cellVal === '' ? 'selected' : ''}>-</option>`;
+                TAREO_CODES.forEach(item => {
+                  const isSelected = (cellVal === item.code || (item.code === 'VC' && cellVal === 'V'));
+                  optionsHTML += `<option value="${item.code}" ${isSelected ? 'selected' : ''}>${item.code}</option>`;
+                });
+
+                rowHTML += `
+                  <td class="p-0.5 border-r border-slate-800/60 text-center ${cellBgClass}">
+                    <select 
+                      onchange="onTareoCellChange(${emp.id}, ${d}, this.value)"
+                      class="w-full text-center py-1 rounded text-[11px] font-bold border focus:outline-none focus:ring-1 focus:ring-purple-400 cursor-pointer ${badgeClass}">
+                      ${optionsHTML}
+                    </select>
+                  </td>
+                `;
+              }
+
+              // Calculate summary counts for all 16 codes
+              let totalDaysRecorded = 0;
+              TAREO_CODES.forEach(item => {
+                let count = 0;
+                for (let d = 1; d <= daysInMonth; d++) {
+                  const val = empRecord[d];
+                  if (val === item.code || (item.code === 'VC' && val === 'V')) {
+                    count++;
+                  }
+                }
+                totalDaysRecorded += count;
+                rowHTML += `<td id="tareo-sum-${item.code}-${emp.id}" class="py-2 px-1 text-center font-bold border-r border-slate-800 ${item.sumBg}">${count}</td>`;
+              });
+
+              rowHTML += `<td id="tareo-sum-total-${emp.id}" class="py-2 px-1 text-center font-bold bg-slate-900 text-white">${totalDaysRecorded}</td>`;
+
+              tr.innerHTML = rowHTML;
+              tableBody.appendChild(tr);
+            });
+          }
+
+          function onTareoCellChange(empId, day, value) {
+            const periodKey = getTareoPeriodKey();
+            if (!tareoData[periodKey]) tareoData[periodKey] = {};
+            if (!tareoData[periodKey][empId]) tareoData[periodKey][empId] = {};
+
+            tareoData[periodKey][empId][day] = value;
+
+            // Recalculate summary row in place for speed
+            const daysInMonth = new Date(currentTareoYear, currentTareoMonth + 1, 0).getDate();
+            const empRecord = tareoData[periodKey][empId];
+
+            let totalDaysRecorded = 0;
+            TAREO_CODES.forEach(item => {
+              let count = 0;
+              for (let d = 1; d <= daysInMonth; d++) {
+                const val = empRecord[d];
+                if (val === item.code || (item.code === 'VC' && val === 'V')) {
+                  count++;
+                }
+              }
+              totalDaysRecorded += count;
+              const el = document.getElementById(`tareo-sum-${item.code}-${empId}`);
+              if (el) el.textContent = count;
+            });
+
+            const elTotal = document.getElementById(`tareo-sum-total-${empId}`);
+            if (elTotal) elTotal.textContent = totalDaysRecorded;
+
+            // Auto-save to storage in background
+            saveTareoToStorage(false);
+          }
+
+          function autoFillTareoMonth() {
+            const periodKey = getTareoPeriodKey();
+            if (!tareoData[periodKey]) tareoData[periodKey] = {};
+
+            const activeEmployees = employees.filter(e => e.estado !== 'Cesado');
+            const daysInMonth = new Date(currentTareoYear, currentTareoMonth + 1, 0).getDate();
+
+            activeEmployees.forEach(emp => {
+              if (!tareoData[periodKey][emp.id]) {
+                tareoData[periodKey][emp.id] = {};
+              }
+              const empRecord = tareoData[periodKey][emp.id];
+
+              for (let d = 1; d <= daysInMonth; d++) {
+                const dayStr = String(d).padStart(2, '0');
+                const mStr = String(currentTareoMonth + 1).padStart(2, '0');
+                const fullDateStr = `${currentTareoYear}-${mStr}-${dayStr}`;
+
+                const dateObj = new Date(currentTareoYear, currentTareoMonth, d);
+                const dayOfWeek = dateObj.getDay(); // 0 = Sunday, 6 = Saturday
+
+                // Check if worker has an approved vacation during this day
+                const hasVacation = Array.isArray(vacations) && vacations.some(v => {
+                  if (v.employeeId !== emp.id) return false;
+                  if (v.estado && v.estado !== 'Aprobado') return false;
+                  return (fullDateStr >= v.fechaInicio && fullDateStr <= v.fechaFin);
+                });
+
+                if (hasVacation) {
+                  empRecord[d] = 'VC';
+                } else if (dayOfWeek === 0 || dayOfWeek === 6) {
+                  empRecord[d] = 'DL';
+                } else {
+                  empRecord[d] = 'A';
+                }
+              }
+            });
+
+            renderTareoModule();
+            saveTareoToStorage(true);
+            showToast(`¡Tareo de ${TAREO_MONTH_NAMES[currentTareoMonth]} ${currentTareoYear} auto-completado con éxito!`, 'success');
+          }
+
+          async function saveTareoToStorage(showToastMsg = false) {
+            try {
+              const periodKey = getTareoPeriodKey();
+              const records = tareoData[periodKey] || {};
+
+              localStorage.setItem(STORAGE_KEY_TAREO, JSON.stringify(tareoData));
+
+              const res = await fetch('/api/tareo', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ periodo: periodKey, records })
+              });
+
+              if (res.ok && showToastMsg) {
+                showToast(`¡Tareo de ${TAREO_MONTH_NAMES[currentTareoMonth]} ${currentTareoYear} guardado correctamente!`, 'success');
+              }
+            } catch (err) {
+              console.error("Error al guardar tareo:", err);
+              if (showToastMsg) {
+                showToast("Error al conectar con el servidor para guardar tareo. Se guardó localmente.", "warning");
+              }
+            }
+          }
+
+          function clearTareoMonth() {
+            const periodKey = getTareoPeriodKey();
+            const monthName = TAREO_MONTH_NAMES[currentTareoMonth];
+
+            if (!confirm(`¿Estás seguro de que deseas limpiar toda la información de tareo para ${monthName} ${currentTareoYear}? Esta acción borrará los registros de asistencias del mes.`)) {
+              return;
+            }
+
+            tareoData[periodKey] = {};
+            renderTareoModule();
+            saveTareoToStorage(true);
+            showToast(`¡Se ha limpiado la información de tareo para ${monthName} ${currentTareoYear}!`, 'info');
+          }
+
+          function triggerTareoImport() {
+            const fileInput = document.getElementById('input-tareo-excel-file');
+            if (fileInput) {
+              fileInput.value = '';
+              fileInput.click();
+            }
+          }
+
+          function importTareoExcel(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (typeof XLSX === 'undefined') {
+              alert("La librería SheetJS (XLSX) no está cargada.");
+              return;
+            }
+
+            const CODE_MAP = {
+              'R': 'R', 'RETIRO': 'R',
+              'A': 'A', 'ASISTIO': 'A', 'X': 'A', '1': 'A',
+              'DL': 'DL', 'DOMINICAL': 'DL', 'DOM': 'DL', 'DESCANSO': 'DL',
+              'FE': 'FE', 'FERIADO': 'FE',
+              'F': 'F', 'FALTA': 'F',
+              'P': 'P', 'PERMISO': 'P',
+              'SP': 'SP', 'SUSPENDIDO': 'SP',
+              'D': 'D',
+              'DM': 'DM', 'DESCANSO MEDICO': 'DM',
+              'SB': 'SB', 'SUBSIDIO': 'SB',
+              'VC': 'VC', 'V': 'VC', 'VACACIONES': 'VC',
+              'LP': 'LP', 'PATERNIDAD': 'LP',
+              'LM': 'LM', 'MATERNIDAD': 'LM',
+              'IN': 'IN', 'INGRESO': 'IN',
+              'LF': 'LF', 'FAMILIAR ENFERMO': 'LF',
+              'FF': 'FF', 'FALLECIMIENTO': 'FF', 'FALLECIMIENTO FAMILIAR': 'FF'
+            };
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+              try {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                const jsonRows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+
+                if (!jsonRows || jsonRows.length === 0) {
+                  showToast("La hoja de cálculo seleccionada está vacía.", "warning");
+                  return;
+                }
+
+                const periodKey = getTareoPeriodKey();
+                if (!tareoData[periodKey]) tareoData[periodKey] = {};
+
+                const daysInMonth = new Date(currentTareoYear, currentTareoMonth + 1, 0).getDate();
+                const activeEmployees = employees.filter(emp => emp.estado !== 'Cesado');
+
+                let headerRowIndex = -1;
+                let dayColumnIndexes = {};
+                let nameColIndex = -1;
+                let dniColIndex = -1;
+
+                // 1. Scan top rows for column mapping
+                for (let r = 0; r < Math.min(jsonRows.length, 10); r++) {
+                  const row = jsonRows[r] || [];
+                  for (let c = 0; c < row.length; c++) {
+                    const val = String(row[c] || '').trim().toUpperCase();
+                    if (val.includes('APELLIDO') || val.includes('NOMBRE') || val.includes('TRABAJADOR')) {
+                      nameColIndex = c;
+                      headerRowIndex = r;
+                    }
+                    if (val.includes('DNI') || val.includes('LEGAJO')) {
+                      if (val.includes('DNI')) dniColIndex = c;
+                    }
+                  }
+
+                  if (nameColIndex !== -1) {
+                    for (let c = 0; c < row.length; c++) {
+                      const rawVal = String(row[c] || '').trim();
+                      const dayMatch = rawVal.match(/^(\d{1,2})(-[a-zA-Z]+)?$/);
+                      if (dayMatch) {
+                        const dayNum = parseInt(dayMatch[1], 10);
+                        if (dayNum >= 1 && dayNum <= daysInMonth) {
+                          dayColumnIndexes[dayNum] = c;
+                        }
+                      }
+                    }
+                    break;
+                  }
+                }
+
+                if (Object.keys(dayColumnIndexes).length === 0) {
+                  for (let r = 0; r < Math.min(jsonRows.length, 6); r++) {
+                    const row = jsonRows[r] || [];
+                    for (let c = 0; c < row.length; c++) {
+                      const rawVal = String(row[c] || '').trim();
+                      const dayMatch = rawVal.match(/^(\d{1,2})(-[a-zA-Z]+)?$/);
+                      if (dayMatch) {
+                        const dayNum = parseInt(dayMatch[1], 10);
+                        if (dayNum >= 1 && dayNum <= daysInMonth) {
+                          dayColumnIndexes[dayNum] = c;
+                        }
+                      }
+                    }
+                  }
+                }
+
+                if (nameColIndex === -1) nameColIndex = 1;
+
+                let importedCount = 0;
+
+                for (let r = (headerRowIndex !== -1 ? headerRowIndex + 1 : 0); r < jsonRows.length; r++) {
+                  const row = jsonRows[r] || [];
+                  const rawName = String(row[nameColIndex] || '').trim().toLowerCase();
+                  const rawDni = dniColIndex !== -1 ? String(row[dniColIndex] || '').trim() : '';
+
+                  if (!rawName && !rawDni) continue;
+
+                  const matchedEmp = activeEmployees.find(emp => {
+                    if (rawDni && emp.dni && emp.dni === rawDni) return true;
+                    if (rawName && emp.nombre && emp.nombre.toLowerCase().trim() === rawName) return true;
+                    if (rawName && emp.nombre && (emp.nombre.toLowerCase().includes(rawName) || rawName.includes(emp.nombre.toLowerCase()))) return true;
+                    return false;
+                  });
+
+                  if (matchedEmp) {
+                    if (!tareoData[periodKey][matchedEmp.id]) {
+                      tareoData[periodKey][matchedEmp.id] = {};
+                    }
+                    const empRecord = tareoData[periodKey][matchedEmp.id];
+
+                    for (let d = 1; d <= daysInMonth; d++) {
+                      const colIdx = dayColumnIndexes[d];
+                      if (colIdx !== undefined && row[colIdx] !== undefined) {
+                        let code = String(row[colIdx] || '').trim().toUpperCase();
+                        if (CODE_MAP[code]) {
+                          empRecord[d] = CODE_MAP[code];
+                        }
+                      }
+                    }
+                    importedCount++;
+                  }
+                }
+
+                renderTareoModule();
+                saveTareoToStorage(true);
+
+                const monthName = TAREO_MONTH_NAMES[currentTareoMonth];
+                if (importedCount > 0) {
+                  showToast(`¡Tareo importado con éxito para ${importedCount} trabajador(es) en ${monthName} ${currentTareoYear}!`, 'success');
+                } else {
+                  showToast("Se leyó la hoja de cálculo pero no se hallaron coincidencias exactas con los trabajadores activos.", "warning");
+                }
+
+              } catch (err) {
+                console.error("Error al importar archivo de tareo:", err);
+                showToast("Ocurrió un error al procesar el archivo Excel de Tareo.", "rose");
+              }
+            };
+            reader.readAsArrayBuffer(file);
+          }
+
+          function exportTareoExcel() {
+            const activeEmployees = employees.filter(e => e.estado !== 'Cesado');
+            if (activeEmployees.length === 0) {
+              alert("No hay empleados activos en tareo para exportar.");
+              return;
+            }
+
+            const periodKey = getTareoPeriodKey();
+            const periodRecords = tareoData[periodKey] || {};
+            const daysInMonth = new Date(currentTareoYear, currentTareoMonth + 1, 0).getDate();
+            const monthName = TAREO_MONTH_NAMES[currentTareoMonth].toUpperCase();
+            const monthAbbr = monthName.substring(0, 3);
+
+            // Row 1: Title Banner
+            const titleRow = [`PLANILLA ${monthName} ${currentTareoYear}`];
+
+            // Row 2: Headers 1 (Day Names & Full Code Descriptions matching official Excel)
+            const headerRow1 = ["LEGAJO", "APELLIDOS Y NOMBRES", "DEPARTAMENTO"];
+            for (let d = 1; d <= daysInMonth; d++) {
+              const dateObj = new Date(currentTareoYear, currentTareoMonth, d);
+              const dayAbbr = TAREO_DAY_NAMES[dateObj.getDay()];
+              headerRow1.push(dayAbbr);
+            }
+            TAREO_CODES.forEach(item => {
+              headerRow1.push(item.title);
+            });
+            headerRow1.push("TOTAL DÍAS");
+
+            // Row 3: Headers 2 (Dates 1-Ago... & Short Code Keys)
+            const headerRow2 = ["", "", ""];
+            for (let d = 1; d <= daysInMonth; d++) {
+              headerRow2.push(`${d}-${monthAbbr}`);
+            }
+            TAREO_CODES.forEach(item => {
+              headerRow2.push(item.code);
+            });
+            headerRow2.push("TOTAL");
+
+            // Rows data
+            const rows = activeEmployees.map((emp, idx) => {
+              const empRecord = periodRecords[emp.id] || {};
+              const rowData = [idx + 1, emp.nombre, emp.departamento || 'OPERACIONES'];
+
+              for (let d = 1; d <= daysInMonth; d++) {
+                rowData.push(empRecord[d] || '');
+              }
+
+              let totalDaysRecorded = 0;
+              TAREO_CODES.forEach(item => {
+                let count = 0;
+                for (let d = 1; d <= daysInMonth; d++) {
+                  const val = empRecord[d];
+                  if (val === item.code || (item.code === 'VC' && val === 'V')) {
+                    count++;
+                  }
+                }
+                totalDaysRecorded += count;
+                rowData.push(count);
+              });
+
+              rowData.push(totalDaysRecorded);
+              return rowData;
+            });
+
+            if (typeof XLSX !== 'undefined') {
+              const ws = XLSX.utils.aoa_to_sheet([titleRow, [], headerRow1, headerRow2, ...rows]);
+              const wb = XLSX.utils.book_new();
+              XLSX.utils.book_append_sheet(wb, ws, `Tareo ${monthAbbr} ${currentTareoYear}`);
+              XLSX.writeFile(wb, `planilla_tareo_${monthName.toLowerCase()}_${currentTareoYear}.xlsx`);
+              showToast("¡Hoja de Tareo exportada en Excel (.xlsx) con éxito!", "success");
+            } else {
+              alert("Error: La librería XLSX no está cargada.");
             }
           }
 

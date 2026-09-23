@@ -60,8 +60,14 @@ const vacationSchema = new mongoose.Schema({
   estado: { type: String, default: 'Aprobado' }
 }, { timestamps: true });
 
+const tareoSchema = new mongoose.Schema({
+  periodo: { type: String, required: true, unique: true },
+  records: { type: Object, default: {} }
+}, { timestamps: true });
+
 const Employee = mongoose.model('Employee', employeeSchema);
 const Vacation = mongoose.model('Vacation', vacationSchema);
+const Tareo = mongoose.model('Tareo', tareoSchema);
 
 // Connection Status Flag
 let isMongoConnected = false;
@@ -70,15 +76,17 @@ let isMongoConnected = false;
 function readData() {
   try {
     if (!fs.existsSync(DB_FILE)) {
-      const defaultData = { employees: [], vacations: [] };
+      const defaultData = { employees: [], vacations: [], tareo: {} };
       fs.writeFileSync(DB_FILE, JSON.stringify(defaultData, null, 2), 'utf8');
       return defaultData;
     }
     const raw = fs.readFileSync(DB_FILE, 'utf8');
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw);
+    if (!parsed.tareo) parsed.tareo = {};
+    return parsed;
   } catch (err) {
     console.error('Error al leer datos.json:', err);
-    return { employees: [], vacations: [] };
+    return { employees: [], vacations: [], tareo: {} };
   }
 }
 
@@ -531,11 +539,64 @@ app.delete('/api/vacaciones/:id', async (req, res) => {
 });
 
 // ==========================================
+// TAREO MODULE ENDPOINTS
+// ==========================================
+app.get('/api/tareo', async (req, res) => {
+  try {
+    if (isMongoConnected) {
+      const tareoDocs = await Tareo.find({});
+      const tareoObj = {};
+      tareoDocs.forEach(doc => {
+        tareoObj[doc.periodo] = doc.records || {};
+      });
+      return res.json(tareoObj);
+    }
+    const data = readData();
+    res.json(data.tareo || {});
+  } catch (err) {
+    console.error('Error en GET /api/tareo:', err);
+    res.status(500).json({ error: 'Error al obtener datos de tareo' });
+  }
+});
+
+app.post('/api/tareo', async (req, res) => {
+  try {
+    const { periodo, records } = req.body;
+    if (!periodo) {
+      return res.status(400).json({ success: false, error: 'Periodo es requerido' });
+    }
+
+    if (isMongoConnected) {
+      await Tareo.findOneAndUpdate(
+        { periodo },
+        { periodo, records },
+        { upsert: true, new: true }
+      );
+      return res.json({ success: true, message: 'Tareo guardado con éxito' });
+    }
+
+    // Fallback Local JSON
+    const data = readData();
+    if (!data.tareo) data.tareo = {};
+    data.tareo[periodo] = records || {};
+
+    if (writeData(data)) {
+      res.json({ success: true, message: 'Tareo guardado con éxito' });
+    } else {
+      res.status(500).json({ success: false, error: 'Error al guardar tareo' });
+    }
+  } catch (err) {
+    console.error('Error en POST /api/tareo:', err);
+    res.status(500).json({ success: false, error: 'Error al guardar tareo' });
+  }
+});
+
+// ==========================================
 // FULL BACKUP IMPORT & RESET
 // ==========================================
 app.post('/api/backup/import', async (req, res) => {
   try {
-    const { employees, vacations } = req.body;
+    const { employees, vacations, tareo } = req.body;
     if (!Array.isArray(employees) || !Array.isArray(vacations)) {
       return res.status(400).json({ success: false, error: 'Estructura de respaldo inválida' });
     }
@@ -543,13 +604,18 @@ app.post('/api/backup/import', async (req, res) => {
     if (isMongoConnected) {
       await Employee.deleteMany({});
       await Vacation.deleteMany({});
+      await Tareo.deleteMany({});
       if (employees.length > 0) await Employee.insertMany(employees);
       if (vacations.length > 0) await Vacation.insertMany(vacations);
-      return res.json({ success: true, message: 'Respaldo importado correctamente', data: { employees, vacations } });
+      if (tareo && typeof tareo === 'object') {
+        const tareoDocs = Object.keys(tareo).map(periodo => ({ periodo, records: tareo[periodo] }));
+        if (tareoDocs.length > 0) await Tareo.insertMany(tareoDocs);
+      }
+      return res.json({ success: true, message: 'Respaldo importado correctamente', data: { employees, vacations, tareo: tareo || {} } });
     }
 
     // Fallback Local JSON
-    const data = { employees, vacations };
+    const data = { employees, vacations, tareo: tareo || {} };
     if (writeData(data)) {
       res.json({ success: true, message: 'Respaldo importado correctamente', data });
     } else {
