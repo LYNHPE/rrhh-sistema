@@ -3298,24 +3298,75 @@
               return;
             }
 
+            // Comprehensive map of aliases to official 16 Tareo Codes
             const CODE_MAP = {
-              'R': 'R', 'RETIRO': 'R',
-              'A': 'A', 'ASISTIO': 'A', 'X': 'A', '1': 'A',
-              'DL': 'DL', 'DOMINICAL': 'DL', 'DOM': 'DL', 'DESCANSO': 'DL',
-              'FE': 'FE', 'FERIADO': 'FE',
-              'F': 'F', 'FALTA': 'F',
-              'P': 'P', 'PERMISO': 'P',
-              'SP': 'SP', 'SUSPENDIDO': 'SP',
-              'D': 'D',
-              'DM': 'DM', 'DESCANSO MEDICO': 'DM',
-              'SB': 'SB', 'SUBSIDIO': 'SB',
-              'VC': 'VC', 'V': 'VC', 'VACACIONES': 'VC',
-              'LP': 'LP', 'PATERNIDAD': 'LP',
-              'LM': 'LM', 'MATERNIDAD': 'LM',
-              'IN': 'IN', 'INGRESO': 'IN',
-              'LF': 'LF', 'FAMILIAR ENFERMO': 'LF',
-              'FF': 'FF', 'FALLECIMIENTO': 'FF', 'FALLECIMIENTO FAMILIAR': 'FF'
+              'R': 'R', 'RETIRO': 'R', 'CESE': 'R', 'CESADO': 'R', 'C': 'R',
+              'A': 'A', 'ASISTIO': 'A', 'ASISTIÓ': 'A', 'ASISTENCIA': 'A', 'PRESENTE': 'A', 'TRABAJO': 'A', 'TRABAJÓ': 'A', 'X': 'A', '1': 'A', '1.0': 'A', 'OK': 'A', '•': 'A', 'S': 'A', 'SI': 'A', 'SÍ': 'A',
+              'DL': 'DL', 'DOMINICAL': 'DL', 'DOM': 'DL', 'DOMINGO': 'DL', 'D.L': 'DL', 'D.L.': 'DL',
+              'FE': 'FE', 'FERIADO': 'FE', 'FER': 'FE', 'F.E': 'FE', 'F.E.': 'FE',
+              'F': 'F', 'FALTA': 'F', 'FALTO': 'F', 'FALTÓ': 'F', 'INJUSTIFICADA': 'F', '0': 'F', '0.0': 'F', 'N': 'F', 'NO': 'F',
+              'P': 'P', 'PERMISO': 'P', 'PERM': 'P', 'PERMISO REMUNERADO': 'P', 'PERMISO SIN GOCE': 'P',
+              'SP': 'SP', 'SUSPENDIDO': 'SP', 'SUSPENSION': 'SP', 'SUSPENSIÓN': 'SP', 'S.P': 'SP', 'S.P.': 'SP',
+              'D': 'D', 'DESCANSO': 'D', 'COMPENSATORIO': 'D', 'DESCANSO COMPENSATORIO': 'D',
+              'DM': 'DM', 'DESCANSO MEDICO': 'DM', 'DESCANSO MÉDICO': 'DM', 'MEDICO': 'DM', 'MÉDICO': 'DM', 'D.M': 'DM', 'D.M.': 'DM',
+              'SB': 'SB', 'SUBSIDIO': 'SB', 'SUBSIDIOS': 'SB', 'S.B': 'SB', 'S.B.': 'SB',
+              'VC': 'VC', 'V': 'VC', 'VACACIONES': 'VC', 'VAC': 'VC', 'VACACION': 'VC', 'V.C': 'VC', 'V.C.': 'VC',
+              'LP': 'LP', 'PATERNIDAD': 'LP', 'PAT': 'LP', 'L.P': 'LP', 'L.P.': 'LP',
+              'LM': 'LM', 'MATERNIDAD': 'LM', 'MAT': 'LM', 'L.M': 'LM', 'L.M.': 'LM',
+              'IN': 'IN', 'INGRESO': 'IN', 'ALTA': 'IN', 'ING': 'IN', 'I.N': 'IN', 'I.N.': 'IN',
+              'LF': 'LF', 'FAMILIAR ENFERMO': 'LF', 'FAM ENFERMO': 'LF', 'FAMILIAR': 'LF', 'L.F': 'LF', 'L.F.': 'LF',
+              'FF': 'FF', 'FALLECIMIENTO': 'FF', 'FALLECIMIENTO FAMILIAR': 'FF', 'FALLECIMIENTO FAM': 'FF', 'FALLEC': 'FF', 'F.F': 'FF', 'F.F.': 'FF'
             };
+
+            const validCodesList = TAREO_CODES.map(c => c.code);
+
+            // Robust name matching helper
+            function isSameEmployeeName(nameInExcel, nameInDb) {
+              if (!nameInExcel || !nameInDb) return false;
+              const clean1 = String(nameInExcel).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[,.-]/g, ' ').replace(/\s+/g, ' ').trim();
+              const clean2 = String(nameInDb).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[,.-]/g, ' ').replace(/\s+/g, ' ').trim();
+
+              if (clean1 === clean2) return true;
+              if (clean1.includes(clean2) || clean2.includes(clean1)) return true;
+
+              const words1 = clean1.split(' ').filter(w => w.length > 2);
+              const words2 = clean2.split(' ').filter(w => w.length > 2);
+
+              if (words1.length === 0 || words2.length === 0) return false;
+
+              const matches = words1.filter(w => words2.includes(w));
+              if (matches.length >= Math.min(2, Math.min(words1.length, words2.length))) {
+                return true;
+              }
+              return false;
+            }
+
+            // Extract day number (1..31) from various Excel header formats
+            function extractDayNumber(val, maxDays) {
+              if (val === null || val === undefined || val === '') return null;
+              if (typeof val === 'number') {
+                if (Number.isInteger(val) && val >= 1 && val <= maxDays) return val;
+                return null;
+              }
+              const str = String(val).trim().toUpperCase();
+              if (!str) return null;
+
+              if (/^\d{1,2}$/.test(str)) {
+                const n = parseInt(str, 10);
+                if (n >= 1 && n <= maxDays) return n;
+              }
+              const m1 = str.match(/^D(?:IA)?\s*0*([1-9]|[12][0-9]|3[01])$/);
+              if (m1) {
+                const n = parseInt(m1[1], 10);
+                if (n >= 1 && n <= maxDays) return n;
+              }
+              const m2 = str.match(/^0*([1-9]|[12][0-9]|3[01])\s*[-/\s]/);
+              if (m2) {
+                const n = parseInt(m2[1], 10);
+                if (n >= 1 && n <= maxDays) return n;
+              }
+              return null;
+            }
 
             const reader = new FileReader();
             reader.onload = function (e) {
@@ -3337,71 +3388,73 @@
                 const daysInMonth = new Date(currentTareoYear, currentTareoMonth + 1, 0).getDate();
                 const activeEmployees = employees.filter(emp => emp.estado !== 'Cesado');
 
-                let headerRowIndex = -1;
                 let dayColumnIndexes = {};
                 let nameColIndex = -1;
                 let dniColIndex = -1;
+                let legajoColIndex = -1;
+                let headerRowIndex = -1;
 
-                // 1. Scan top rows for column mapping
-                for (let r = 0; r < Math.min(jsonRows.length, 10); r++) {
+                // 1. Scan top 15 rows for column mapping & day headers
+                for (let r = 0; r < Math.min(jsonRows.length, 15); r++) {
                   const row = jsonRows[r] || [];
                   for (let c = 0; c < row.length; c++) {
-                    const val = String(row[c] || '').trim().toUpperCase();
-                    if (val.includes('APELLIDO') || val.includes('NOMBRE') || val.includes('TRABAJADOR')) {
-                      nameColIndex = c;
-                      headerRowIndex = r;
-                    }
-                    if (val.includes('DNI') || val.includes('LEGAJO')) {
-                      if (val.includes('DNI')) dniColIndex = c;
-                    }
-                  }
+                    const rawVal = row[c];
+                    const valUpper = String(rawVal || '').trim().toUpperCase();
 
-                  if (nameColIndex !== -1) {
-                    for (let c = 0; c < row.length; c++) {
-                      const rawVal = String(row[c] || '').trim();
-                      const dayMatch = rawVal.match(/^(\d{1,2})(-[a-zA-Z]+)?$/);
-                      if (dayMatch) {
-                        const dayNum = parseInt(dayMatch[1], 10);
-                        if (dayNum >= 1 && dayNum <= daysInMonth) {
-                          dayColumnIndexes[dayNum] = c;
-                        }
+                    if (valUpper.includes('APELLIDO') || valUpper.includes('NOMBRE') || valUpper.includes('TRABAJADOR') || valUpper.includes('EMPLEADO')) {
+                      if (nameColIndex === -1) {
+                        nameColIndex = c;
+                        headerRowIndex = r;
                       }
                     }
-                    break;
-                  }
-                }
+                    if (valUpper.includes('DNI') || valUpper.includes('CEDULA')) {
+                      if (dniColIndex === -1) dniColIndex = c;
+                    }
+                    if (valUpper.includes('LEGAJO') || valUpper.includes('Nº') || valUpper.includes('NUM') || valUpper.includes('COD')) {
+                      if (legajoColIndex === -1) legajoColIndex = c;
+                    }
 
-                if (Object.keys(dayColumnIndexes).length === 0) {
-                  for (let r = 0; r < Math.min(jsonRows.length, 6); r++) {
-                    const row = jsonRows[r] || [];
-                    for (let c = 0; c < row.length; c++) {
-                      const rawVal = String(row[c] || '').trim();
-                      const dayMatch = rawVal.match(/^(\d{1,2})(-[a-zA-Z]+)?$/);
-                      if (dayMatch) {
-                        const dayNum = parseInt(dayMatch[1], 10);
-                        if (dayNum >= 1 && dayNum <= daysInMonth) {
-                          dayColumnIndexes[dayNum] = c;
-                        }
-                      }
+                    // Check for day headers
+                    const dayNum = extractDayNumber(rawVal, daysInMonth);
+                    if (dayNum !== null && !dayColumnIndexes[dayNum]) {
+                      dayColumnIndexes[dayNum] = c;
                     }
                   }
                 }
 
-                if (nameColIndex === -1) nameColIndex = 1;
+                // If name column wasn't found by title, default to col 1 (or col 0)
+                if (nameColIndex === -1) {
+                  nameColIndex = legajoColIndex === 0 ? 1 : 0;
+                }
+
+                // If day column indexes were not detected by numbers in headers, fall back to sequential columns
+                if (Object.keys(dayColumnIndexes).length < 15) {
+                  let startCol = nameColIndex + 1;
+                  if (dniColIndex === startCol || legajoColIndex === startCol) startCol++;
+                  if (dniColIndex === startCol || legajoColIndex === startCol) startCol++;
+
+                  for (let d = 1; d <= daysInMonth; d++) {
+                    dayColumnIndexes[d] = startCol + (d - 1);
+                  }
+                }
 
                 let importedCount = 0;
+                let importedDaysTotal = 0;
+                const startRow = headerRowIndex !== -1 ? headerRowIndex + 1 : 0;
 
-                for (let r = (headerRowIndex !== -1 ? headerRowIndex + 1 : 0); r < jsonRows.length; r++) {
+                for (let r = startRow; r < jsonRows.length; r++) {
                   const row = jsonRows[r] || [];
-                  const rawName = String(row[nameColIndex] || '').trim().toLowerCase();
+                  const rawName = String(row[nameColIndex] || '').trim();
                   const rawDni = dniColIndex !== -1 ? String(row[dniColIndex] || '').trim() : '';
+                  const rawLegajo = legajoColIndex !== -1 ? String(row[legajoColIndex] || '').trim() : '';
 
-                  if (!rawName && !rawDni) continue;
+                  if (!rawName && !rawDni && !rawLegajo) continue;
 
-                  const matchedEmp = activeEmployees.find(emp => {
-                    if (rawDni && emp.dni && emp.dni === rawDni) return true;
-                    if (rawName && emp.nombre && emp.nombre.toLowerCase().trim() === rawName) return true;
-                    if (rawName && emp.nombre && (emp.nombre.toLowerCase().includes(rawName) || rawName.includes(emp.nombre.toLowerCase()))) return true;
+                  // Find matching employee by DNI, Legajo/ID, or Name
+                  const matchedEmp = activeEmployees.find((emp, idx) => {
+                    if (rawDni && emp.dni && String(emp.dni).trim() === rawDni) return true;
+                    if (rawLegajo && (String(emp.id) === rawLegajo || String(idx + 1) === rawLegajo)) return true;
+                    if (rawName && emp.nombre && isSameEmployeeName(rawName, emp.nombre)) return true;
                     return false;
                   });
 
@@ -3410,28 +3463,42 @@
                       tareoData[periodKey][matchedEmp.id] = {};
                     }
                     const empRecord = tareoData[periodKey][matchedEmp.id];
+                    let daysImportedForWorker = 0;
 
                     for (let d = 1; d <= daysInMonth; d++) {
                       const colIdx = dayColumnIndexes[d];
                       if (colIdx !== undefined && row[colIdx] !== undefined) {
-                        let code = String(row[colIdx] || '').trim().toUpperCase();
-                        if (CODE_MAP[code]) {
-                          empRecord[d] = CODE_MAP[code];
+                        let val = String(row[colIdx] || '').trim().toUpperCase();
+                        if (CODE_MAP[val]) {
+                          empRecord[d] = CODE_MAP[val];
+                          daysImportedForWorker++;
+                        } else if (validCodesList.includes(val)) {
+                          empRecord[d] = val;
+                          daysImportedForWorker++;
                         }
                       }
+                    }
+
+                    if (daysImportedForWorker > 0) {
+                      importedDaysTotal += daysImportedForWorker;
                     }
                     importedCount++;
                   }
                 }
 
+                // Reset file input value so re-importing the same file triggers onchange
+                event.target.value = '';
+
                 renderTareoModule();
                 saveTareoToStorage(true);
 
                 const monthName = TAREO_MONTH_NAMES[currentTareoMonth];
-                if (importedCount > 0) {
-                  showToast(`¡Tareo importado con éxito para ${importedCount} trabajador(es) en ${monthName} ${currentTareoYear}!`, 'success');
+                if (importedCount > 0 && importedDaysTotal > 0) {
+                  showToast(`¡Tareo importado con éxito! Se cargaron ${importedDaysTotal} registro(s) para ${importedCount} trabajador(es) en ${monthName} ${currentTareoYear}.`, 'success');
+                } else if (importedCount > 0) {
+                  showToast(`Se identificaron ${importedCount} trabajador(es) pero no se encontraron códigos de tareo válidos en los días.`, 'warning');
                 } else {
-                  showToast("Se leyó la hoja de cálculo pero no se hallaron coincidencias exactas con los trabajadores activos.", "warning");
+                  showToast("No se hallaron coincidencias de trabajadores activos en la hoja Excel. Verifica que incluya Apellidos y Nombres o DNI.", "warning");
                 }
 
               } catch (err) {
