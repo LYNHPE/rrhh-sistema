@@ -692,6 +692,15 @@
             <span>Importar</span>
           </button>
 
+          <!-- Download Template Button -->
+          <button onclick="downloadTareoTemplate()" title="Descargar plantilla Excel limpia con la lista de trabajadores para llenar el tareo"
+            class="flex items-center gap-1.5 px-3 py-1.5 text-xs text-amber-300 bg-amber-600/20 hover:bg-amber-600/30 border border-amber-500/30 rounded-xl transition cursor-pointer font-semibold">
+            <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <span>Plantilla</span>
+          </button>
+
           <!-- Save Button -->
           <button onclick="saveTareoToStorage(true)" title="Guardar cambios de tareo en el servidor"
             class="flex items-center gap-1.5 px-3 py-1.5 text-xs text-emerald-300 bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/30 rounded-xl transition cursor-pointer font-semibold">
@@ -3582,6 +3591,75 @@
             } else {
               alert("Error: La librería XLSX no está cargada.");
             }
+          }
+
+          function downloadTareoTemplate() {
+            if (typeof XLSX === 'undefined') {
+              alert("La librería SheetJS (XLSX) no está cargada.");
+              return;
+            }
+
+            const activeEmployees = employees.filter(e => e.estado !== 'Cesado');
+            if (activeEmployees.length === 0) {
+              showToast("No hay empleados activos registrados en la plataforma para generar la plantilla.", "warning");
+              return;
+            }
+
+            const daysInMonth = new Date(currentTareoYear, currentTareoMonth + 1, 0).getDate();
+            const monthName = TAREO_MONTH_NAMES[currentTareoMonth].toUpperCase();
+            const monthAbbr = monthName.substring(0, 3);
+
+            // Row 1: Title
+            const titleRow = [`PLANILLA ${monthName} ${currentTareoYear}`];
+
+            // Row 2: Headers 1 (Day Names & Code Descriptions)
+            const headerRow1 = ["LEGAJO", "APELLIDOS Y NOMBRES"];
+            for (let d = 1; d <= daysInMonth; d++) {
+              const dateObj = new Date(currentTareoYear, currentTareoMonth, d);
+              headerRow1.push(TAREO_DAY_NAMES[dateObj.getDay()]);
+            }
+            TAREO_CODES.forEach(item => headerRow1.push(item.title));
+            headerRow1.push("TOTAL DÍAS");
+
+            // Row 3: Headers 2 (Dates 1-Ago, 2-Ago... & Short Code Keys)
+            const headerRow2 = ["", ""];
+            for (let d = 1; d <= daysInMonth; d++) {
+              headerRow2.push(`${d}-${monthAbbr}`);
+            }
+            TAREO_CODES.forEach(item => headerRow2.push(item.code));
+            headerRow2.push("TOTAL");
+
+            // Data Rows pre-filled with active workers
+            const rows = activeEmployees.map((emp, idx) => {
+              const rowData = [idx + 1, emp.nombre];
+              for (let d = 1; d <= daysInMonth; d++) {
+                rowData.push('');
+              }
+              TAREO_CODES.forEach(() => rowData.push(0));
+              rowData.push(0);
+              return rowData;
+            });
+
+            const sheetData = [titleRow, [], headerRow1, headerRow2, ...rows];
+            const ws = XLSX.utils.aoa_to_sheet(sheetData);
+
+            // Set column widths
+            const colWidths = [
+              { wch: 8 },   // LEGAJO
+              { wch: 32 }   // APELLIDOS Y NOMBRES
+            ];
+            for (let d = 1; d <= daysInMonth; d++) colWidths.push({ wch: 6 });
+            TAREO_CODES.forEach(() => colWidths.push({ wch: 6 }));
+            colWidths.push({ wch: 8 });
+
+            ws['!cols'] = colWidths;
+
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, `Tareo ${monthName}`);
+
+            const fileName = `Plantilla_Tareo_${monthName}_${currentTareoYear}.xlsx`;
+            XLSX.writeFile(wb, fileName);
+            showToast(`¡Plantilla descargada con éxito: ${fileName}!`, "success");
           }
 
           // Helper: Avatar Info
