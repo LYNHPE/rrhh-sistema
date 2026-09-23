@@ -3398,11 +3398,63 @@
                   return;
                 }
 
+                // Auto-detect Month and Year from Excel header rows (e.g. "PLANILLA AGOSTO 2026")
+                const monthMap = {
+                  'ENERO': 0, 'ENE': 0,
+                  'FEBRERO': 1, 'FEB': 1,
+                  'MARZO': 2, 'MAR': 2,
+                  'ABRIL': 3, 'ABR': 3,
+                  'MAYO': 4, 'MAY': 4,
+                  'JUNIO': 5, 'JUN': 5,
+                  'JULIO': 6, 'JUL': 6,
+                  'AGOSTO': 7, 'AGO': 7,
+                  'SETIEMBRE': 8, 'SEP': 8, 'SET': 8, 'SEPTIEMBRE': 8,
+                  'OCTUBRE': 9, 'OCT': 9,
+                  'NOVIEMBRE': 10, 'NOV': 10,
+                  'DICIEMBRE': 11, 'DIC': 11
+                };
+
+                let detectedMonth = -1;
+                let detectedYear = -1;
+
+                for (let r = 0; r < Math.min(jsonRows.length, 6); r++) {
+                  const row = jsonRows[r] || [];
+                  for (let c = 0; c < row.length; c++) {
+                    const text = String(row[c] || '').trim().toUpperCase();
+                    if (!text) continue;
+
+                    const yearMatch = text.match(/\b(202[4-9])\b/);
+                    if (yearMatch && detectedYear === -1) {
+                      detectedYear = parseInt(yearMatch[1], 10);
+                    }
+
+                    Object.keys(monthMap).forEach(mKey => {
+                      if (detectedMonth === -1 && text.includes(mKey)) {
+                        detectedMonth = monthMap[mKey];
+                      }
+                    });
+                  }
+                }
+
+                if (detectedMonth !== -1) currentTareoMonth = detectedMonth;
+                if (detectedYear !== -1) currentTareoYear = detectedYear;
+
+                // Sync UI Selectors & Banner Title
+                const selectMonth = document.getElementById('select-tareo-month');
+                const selectYear = document.getElementById('select-tareo-year');
+                const bannerTitle = document.getElementById('tareo-banner-title');
+
+                if (selectMonth) selectMonth.value = currentTareoMonth;
+                if (selectYear) selectYear.value = currentTareoYear;
+                if (bannerTitle) {
+                  bannerTitle.innerText = `PLANILLA ${TAREO_MONTH_NAMES[currentTareoMonth].toUpperCase()} ${currentTareoYear}`;
+                }
+
                 const periodKey = getTareoPeriodKey();
                 if (!tareoData[periodKey]) tareoData[periodKey] = {};
 
                 const daysInMonth = new Date(currentTareoYear, currentTareoMonth + 1, 0).getDate();
-                const activeEmployees = employees.filter(emp => emp.estado !== 'Cesado');
+                const allEmployeesList = employees;
 
                 let dayColumnIndexes = {};
                 let nameColIndex = -1;
@@ -3466,29 +3518,25 @@
 
                   if (!rawName && !rawDni && !rawLegajo) continue;
 
-                  // Find matching employee by strict priority:
-                  // 1. DNI exact match
-                  // 2. Name token match (highest priority for names)
-                  // 3. Database ID match
-                  // 4. Legajo index fallback
+                  // Priority Matching across all employees
                   let matchedEmp = null;
 
                   if (rawDni) {
-                    matchedEmp = activeEmployees.find(emp => emp.dni && String(emp.dni).trim() === rawDni);
+                    matchedEmp = allEmployeesList.find(emp => emp.dni && String(emp.dni).trim() === rawDni);
                   }
 
                   if (!matchedEmp && rawName) {
-                    matchedEmp = activeEmployees.find(emp => emp.nombre && isSameEmployeeName(rawName, emp.nombre));
+                    matchedEmp = allEmployeesList.find(emp => emp.nombre && isSameEmployeeName(rawName, emp.nombre));
                   }
 
                   if (!matchedEmp && rawLegajo) {
-                    matchedEmp = activeEmployees.find(emp => emp.id && String(emp.id).trim() === rawLegajo);
+                    matchedEmp = allEmployeesList.find(emp => emp.id && String(emp.id).trim() === rawLegajo);
                   }
 
                   if (!matchedEmp && rawLegajo && /^\d+$/.test(rawLegajo)) {
                     const legIdx = parseInt(rawLegajo, 10) - 1;
-                    if (legIdx >= 0 && legIdx < activeEmployees.length) {
-                      matchedEmp = activeEmployees[legIdx];
+                    if (legIdx >= 0 && legIdx < allEmployeesList.length) {
+                      matchedEmp = allEmployeesList[legIdx];
                     }
                   }
 
@@ -3509,6 +3557,8 @@
                         } else if (validCodesList.includes(val)) {
                           empRecord[d] = val;
                           daysImportedForWorker++;
+                        } else if (val === '' || val === '-' || val === '.') {
+                          empRecord[d] = '';
                         }
                       }
                     }
