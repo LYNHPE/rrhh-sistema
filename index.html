@@ -3004,7 +3004,6 @@
             let headHTML1 = `<tr class="bg-slate-950 border-b border-slate-800 text-[11px] font-bold text-slate-300">`;
             headHTML1 += `<th scope="col" class="py-2.5 px-3 sticky left-0 z-20 bg-slate-950 border-r border-slate-800 min-w-[50px] text-center">LEGAJO</th>`;
             headHTML1 += `<th scope="col" class="py-2.5 px-3 sticky left-[50px] z-20 bg-slate-950 border-r border-slate-800 min-w-[200px]">APELLIDOS Y NOMBRES</th>`;
-            headHTML1 += `<th scope="col" class="py-2.5 px-3 border-r border-slate-800 min-w-[130px]">DEPARTAMENTO</th>`;
 
             for (let d = 1; d <= daysInMonth; d++) {
               const dateObj = new Date(currentTareoYear, currentTareoMonth, d);
@@ -3030,7 +3029,6 @@
             let headHTML2 = `<tr class="bg-slate-950 border-b border-slate-800 text-[10px] text-slate-400 font-semibold">`;
             headHTML2 += `<th class="sticky left-0 z-20 bg-slate-950 border-r border-slate-800"></th>`;
             headHTML2 += `<th class="sticky left-[50px] z-20 bg-slate-950 border-r border-slate-800"></th>`;
-            headHTML2 += `<th class="border-r border-slate-800"></th>`;
 
             for (let d = 1; d <= daysInMonth; d++) {
               const dateObj = new Date(currentTareoYear, currentTareoMonth, d);
@@ -3065,7 +3063,6 @@
 
               let rowHTML = `<td class="py-2 px-2 text-center sticky left-0 z-10 bg-slate-950 border-r border-slate-800 font-bold text-slate-400">${index + 1}</td>`;
               rowHTML += `<td class="py-2 px-3 sticky left-[50px] z-10 bg-slate-900/90 border-r border-slate-800 font-semibold text-blue-200 truncate max-w-[200px]" title="${escapeHTML(emp.nombre)}">${escapeHTML(emp.nombre)}</td>`;
-              rowHTML += `<td class="py-2 px-2 border-r border-slate-800 text-slate-400 truncate max-w-[130px]">${escapeHTML(emp.departamento || 'OPERACIONES')}</td>`;
 
               for (let d = 1; d <= daysInMonth; d++) {
                 const dateObj = new Date(currentTareoYear, currentTareoMonth, d);
@@ -3409,7 +3406,7 @@
             const titleRow = [`PLANILLA ${monthName} ${currentTareoYear}`];
 
             // Row 2: Headers 1 (Day Names & Full Code Descriptions matching official Excel)
-            const headerRow1 = ["LEGAJO", "APELLIDOS Y NOMBRES", "DEPARTAMENTO"];
+            const headerRow1 = ["LEGAJO", "APELLIDOS Y NOMBRES"];
             for (let d = 1; d <= daysInMonth; d++) {
               const dateObj = new Date(currentTareoYear, currentTareoMonth, d);
               const dayAbbr = TAREO_DAY_NAMES[dateObj.getDay()];
@@ -3421,7 +3418,7 @@
             headerRow1.push("TOTAL DÍAS");
 
             // Row 3: Headers 2 (Dates 1-Ago... & Short Code Keys)
-            const headerRow2 = ["", "", ""];
+            const headerRow2 = ["", ""];
             for (let d = 1; d <= daysInMonth; d++) {
               headerRow2.push(`${d}-${monthAbbr}`);
             }
@@ -3433,7 +3430,7 @@
             // Rows data
             const rows = activeEmployees.map((emp, idx) => {
               const empRecord = periodRecords[emp.id] || {};
-              const rowData = [idx + 1, emp.nombre, emp.departamento || 'OPERACIONES'];
+              const rowData = [idx + 1, emp.nombre];
 
               for (let d = 1; d <= daysInMonth; d++) {
                 rowData.push(empRecord[d] || '');
