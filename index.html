@@ -2166,7 +2166,7 @@
               ];
 
               const rowsHistorial = vacations.map(v => {
-                const emp = employees.find(e => e.id === v.employeeId);
+                const emp = employees.find(e => Number(e.id) === Number(v.employeeId));
                 return [
                   emp ? emp.nombre : 'Trabajador General',
                   emp ? (emp.dni || '') : '',
@@ -2176,7 +2176,7 @@
                   v.periodo || 'Ciclo General',
                   formatDate(v.fechaInicio),
                   formatDate(v.fechaFin),
-                  v.dias,
+                  parseInt(v.dias, 10) || 0,
                   v.estado || 'Aprobado',
                   v.motivo || ''
                 ];
@@ -2208,9 +2208,11 @@
               ];
 
               const rowsSaldos = activeEmployees.map(emp => {
-                const vacCalc = calculateContractVacations(emp.fechaInicioContrato, emp.fechaFinContrato, emp.esIndeterminado);
-                const empVacList = vacations.filter(v => v.employeeId === emp.id);
-                const diasGozados = empVacList.reduce((acc, curr) => acc + (parseInt(curr.dias) || 0), 0);
+                const vacCalc = calculateContractVacations(emp);
+                const empVacList = vacations.filter(
+                  v => Number(v.employeeId) === Number(emp.id) && (v.estado === 'Aprobado' || !v.estado)
+                );
+                const diasGozados = empVacList.reduce((acc, curr) => acc + (parseInt(curr.dias, 10) || 0), 0);
                 const diasDisponibles = Math.max(0, vacCalc.diasVencidosCompleto - diasGozados);
                 const diasAdelantados = Math.max(0, diasGozados - vacCalc.diasVencidosCompleto);
                 const enablementInfo = getVacationEnablementInfo(emp.fechaInicioContrato);
@@ -2227,7 +2229,7 @@
                   diasGozados,
                   diasAdelantados,
                   diasDisponibles,
-                  enablementInfo ? enablementInfo.fechaDestacada : '--'
+                  enablementInfo ? enablementInfo.fechaProximaHabilitacion : '--'
                 ];
               });
 
@@ -3870,7 +3872,15 @@
           }
 
           // CALCULATE VACATION DAYS FROM CONTRACT START DATE (D.LEG. N° 713)
-          function calculateContractVacations(fechaInicioStr, fechaFinStr, esIndeterminado) {
+          function calculateContractVacations(empOrFechaInicio, fechaFinStr, esIndeterminado, estado) {
+            let fechaInicioStr = empOrFechaInicio;
+            if (empOrFechaInicio && typeof empOrFechaInicio === 'object') {
+              fechaInicioStr = empOrFechaInicio.fechaInicioContrato;
+              fechaFinStr = empOrFechaInicio.fechaFinContrato;
+              esIndeterminado = empOrFechaInicio.esIndeterminado;
+              estado = empOrFechaInicio.estado;
+            }
+
             if (!fechaInicioStr) {
               return {
                 diasTotales: 0,
@@ -3886,7 +3896,8 @@
             }
 
             const inicio = parseLocalDate(fechaInicioStr);
-            const hoy = new Date();
+            const now = new Date();
+            const hoy = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12, 0, 0);
 
             if (isNaN(inicio.getTime())) {
               return {
@@ -3903,27 +3914,36 @@
             }
 
             let fechaCorte = hoy;
-            if (!esIndeterminado && fechaFinStr) {
+            // Solo si el trabajador está formalmente CESADO se corta el cómputo de vacaciones a su fecha fin/cese.
+            // Para trabajadores activos (o en goce de descanso), el récord vacacional continúa acumulándose
+            // ininterrumpidamente hasta la fecha actual conforme al Art. 10 D.Leg 713 y Art. 77 D.Leg 728.
+            if (estado === 'Cesado' && !esIndeterminado && fechaFinStr) {
               const fin = parseLocalDate(fechaFinStr);
               if (!isNaN(fin.getTime()) && fin < hoy) {
                 fechaCorte = fin;
               }
             }
 
-            let years = fechaCorte.getFullYear() - inicio.getFullYear();
-            let months = fechaCorte.getMonth() - inicio.getMonth();
-            let days = fechaCorte.getDate() - inicio.getDate();
+            let years = 0;
+            let months = 0;
+            let days = 0;
 
-            if (days < 0) {
-              months -= 1;
-            }
-            if (months < 0) {
-              years -= 1;
-              months += 12;
-            }
+            if (fechaCorte >= inicio) {
+              years = fechaCorte.getFullYear() - inicio.getFullYear();
+              months = fechaCorte.getMonth() - inicio.getMonth();
+              days = fechaCorte.getDate() - inicio.getDate();
 
-            years = Math.max(0, years);
-            months = Math.max(0, months);
+              if (days < 0) {
+                months -= 1;
+              }
+              if (months < 0) {
+                years -= 1;
+                months += 12;
+              }
+
+              years = Math.max(0, years);
+              months = Math.max(0, months);
+            }
             const totalMonths = (years * 12) + months;
 
             const diasGanadosAnosCumplidos = years * 30;
@@ -3931,7 +3951,9 @@
             const diasCalculados = diasGanadosAnosCumplidos + diasTruncosEnCurso;
 
             let antiguedadTexto = '';
-            if (years > 0 && months > 0) {
+            if (fechaCorte < inicio) {
+              antiguedadTexto = 'Contrato por iniciar';
+            } else if (years > 0 && months > 0) {
               antiguedadTexto = `${years} ${years === 1 ? 'año' : 'años'} y ${months} ${months === 1 ? 'mes' : 'meses'}`;
             } else if (years > 0) {
               antiguedadTexto = `${years} ${years === 1 ? 'año' : 'años'}`;
@@ -4005,6 +4027,8 @@
             if (!fechaInicioStr) {
               return {
                 fechaDestacada: '--/--/----',
+                fechaProximaHabilitacion: '--/--/----',
+                fechaUltimaHabilitacion: '--/--/----',
                 badgeTexto: 'Sin fecha de contrato',
                 estaHabilitadoHoy: false,
                 diasFaltantes: 0,
@@ -4013,11 +4037,14 @@
             }
 
             const inicio = parseLocalDate(fechaInicioStr);
-            const hoy = new Date();
+            const now = new Date();
+            const hoy = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12, 0, 0);
 
             if (isNaN(inicio.getTime())) {
               return {
                 fechaDestacada: '--/--/----',
+                fechaProximaHabilitacion: '--/--/----',
+                fechaUltimaHabilitacion: '--/--/----',
                 badgeTexto: 'Fecha de contrato inválida',
                 estaHabilitadoHoy: false,
                 diasFaltantes: 0,
@@ -4025,15 +4052,19 @@
               };
             }
 
-            let years = hoy.getFullYear() - inicio.getFullYear();
-            let months = hoy.getMonth() - inicio.getMonth();
-            let days = hoy.getDate() - inicio.getDate();
-            if (days < 0) months--;
-            if (months < 0) {
-              years--;
-              months += 12;
+            let years = 0;
+            let months = 0;
+            if (hoy >= inicio) {
+              years = hoy.getFullYear() - inicio.getFullYear();
+              months = hoy.getMonth() - inicio.getMonth();
+              const days = hoy.getDate() - inicio.getDate();
+              if (days < 0) months--;
+              if (months < 0) {
+                years--;
+                months += 12;
+              }
+              years = Math.max(0, years);
             }
-            years = Math.max(0, years);
 
             const primerAniversario = parseLocalDate(fechaInicioStr);
             primerAniversario.setFullYear(inicio.getFullYear() + 1);
@@ -4045,6 +4076,8 @@
 
               return {
                 fechaDestacada: fechaStr,
+                fechaProximaHabilitacion: fechaStr,
+                fechaUltimaHabilitacion: '--/--/----',
                 badgeTexto: `⏳ Faltan ${diasFaltantes} días (Habilitación primer año)`,
                 subtextoCard: `En ${diasFaltantes} días cumple 1 año`,
                 estaHabilitadoHoy: false,
@@ -4052,16 +4085,15 @@
                 periodosVencidosCount: 0
               };
             } else {
-              let aniversarioEsteAno = parseLocalDate(fechaInicioStr);
-              aniversarioEsteAno.setFullYear(hoy.getFullYear());
+              const ultimoCumplido = parseLocalDate(fechaInicioStr);
+              ultimoCumplido.setFullYear(inicio.getFullYear() + years);
 
-              let ultimoCumplido = new Date(aniversarioEsteAno);
-              let proximoAniversario = new Date(aniversarioEsteAno);
+              const proximoAniversario = parseLocalDate(fechaInicioStr);
+              proximoAniversario.setFullYear(inicio.getFullYear() + years + 1);
 
-              if (aniversarioEsteAno <= hoy) {
-                proximoAniversario.setFullYear(hoy.getFullYear() + 1);
-              } else {
-                ultimoCumplido.setFullYear(hoy.getFullYear() - 1);
+              // Garantizar que la próxima fecha de habilitación sea siempre estrictamente posterior a hoy
+              while (proximoAniversario <= hoy) {
+                proximoAniversario.setFullYear(proximoAniversario.getFullYear() + 1);
               }
 
               const diffMs = proximoAniversario - hoy;
@@ -4070,7 +4102,9 @@
               const fechaProximaStr = formatDateObj(proximoAniversario);
 
               return {
-                fechaDestacada: fechaUltimaStr,
+                fechaDestacada: fechaProximaStr,
+                fechaProximaHabilitacion: fechaProximaStr,
+                fechaUltimaHabilitacion: fechaUltimaStr,
                 badgeTexto: `✅ ${years} ${years === 1 ? 'Período Vencido Habilitado' : 'Períodos Vencidos Acumulados'} (${years * 30} días por años cumplidos)`,
                 subtextoCard: `${years} período(s) vencido(s) (${years * 30}d)`,
                 estaHabilitadoHoy: true,
@@ -5751,18 +5785,14 @@
               return;
             }
 
-            const vacCalculated = calculateContractVacations(
-              selectedEmp.fechaInicioContrato,
-              selectedEmp.fechaFinContrato,
-              selectedEmp.esIndeterminado
-            );
+            const vacCalculated = calculateContractVacations(selectedEmp);
 
             const enablementInfo = getVacationEnablementInfo(selectedEmp.fechaInicioContrato);
 
-            const empVacations = vacations.filter(v => v.employeeId === selectedEmpId);
+            const empVacations = vacations.filter(v => Number(v.employeeId) === Number(selectedEmpId));
             const diasGozados = empVacations
-              .filter(v => v.estado === 'Aprobado')
-              .reduce((sum, v) => sum + v.dias, 0);
+              .filter(v => v.estado === 'Aprobado' || !v.estado)
+              .reduce((sum, v) => sum + (parseInt(v.dias, 10) || 0), 0);
 
             const diasTotales = vacCalculated.diasTotales;
             const diasDisponibles = Math.max(0, vacCalculated.diasVencidosCompleto - diasGozados);
@@ -5773,9 +5803,20 @@
             const periodosGozadosCompletos = Math.floor(diasGozados / 30);
             const periodosVencidosPendientes = Math.max(0, periodosTotalesGanados - periodosGozadosCompletos);
 
-            const finContratoBadge = selectedEmp.esIndeterminado
-              ? `<span class="px-2 py-0.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded font-semibold text-[10px]">INDETERMINADO</span>`
-              : `<span class="text-slate-200 font-medium">${formatDate(selectedEmp.fechaFinContrato)}</span>`;
+            const finDate = selectedEmp.fechaFinContrato ? parseLocalDate(selectedEmp.fechaFinContrato) : null;
+            const isFinPast = finDate && !isNaN(finDate.getTime()) && finDate < new Date();
+
+            let finContratoBadge = '';
+            if (selectedEmp.esIndeterminado) {
+              finContratoBadge = `<span class="px-2 py-0.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded font-semibold text-[10px]">INDETERMINADO</span>`;
+            } else if (selectedEmp.fechaFinContrato) {
+              finContratoBadge = `<span class="text-slate-200 font-medium">${formatDate(selectedEmp.fechaFinContrato)}</span>`;
+              if (isFinPast && selectedEmp.estado !== 'Cesado') {
+                finContratoBadge += ` <span class="px-1.5 py-0.2 bg-amber-500/20 text-amber-300 text-[10px] font-bold rounded border border-amber-500/30" title="Fecha fin previa superada. Trabajador continúa laborando activamente.">Continuidad Activa</span>`;
+              }
+            } else {
+              finContratoBadge = `<span class="text-slate-400 font-medium">No especificada</span>`;
+            }
 
             const rutaBadge = selectedEmp.ruta
               ? `<span class="px-2 py-0.5 bg-purple-500/10 text-purple-300 border border-purple-500/20 rounded font-medium text-[11px]">Ruta: ${escapeHTML(selectedEmp.ruta)}</span>`
@@ -6087,7 +6128,7 @@
               return;
             }
 
-            const vacCalculated = calculateContractVacations(emp.fechaInicioContrato, emp.fechaFinContrato, emp.esIndeterminado);
+            const vacCalculated = calculateContractVacations(emp);
 
             if (!vacCalculated.periodosDetalle || vacCalculated.periodosDetalle.length === 0) {
               const opt = document.createElement('option');
@@ -6201,7 +6242,7 @@
               return;
             }
 
-            const vacCalculated = calculateContractVacations(selectedEmp.fechaInicioContrato, selectedEmp.fechaFinContrato, selectedEmp.esIndeterminado);
+            const vacCalculated = calculateContractVacations(selectedEmp);
             const empVacations = vacations.filter(v => v.employeeId === empId && v.estado === 'Aprobado');
             const diasGozadosActuales = empVacations.reduce((sum, v) => sum + v.dias, 0);
             const diasDisponiblesActuales = Math.max(0, vacCalculated.diasVencidosCompleto - diasGozadosActuales);
