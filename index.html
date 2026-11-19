@@ -2199,6 +2199,8 @@
                   "FECHA INICIO CONTRATO",
                   "TIEMPO DE SERVICIO",
                   "PERÍODOS GANADOS CUMPLIDOS",
+                  "PERÍODOS VENCIDOS",
+                  "PERÍODO VIGENTE",
                   "DÍAS TOTALES ACUMULADOS",
                   "DÍAS GOZADOS",
                   "DÍAS ADELANTADOS",
@@ -2216,6 +2218,7 @@
                 const diasDisponibles = Math.max(0, vacCalc.diasVencidosCompleto - diasGozados);
                 const diasAdelantados = Math.max(0, diasGozados - vacCalc.diasVencidosCompleto);
                 const enablementInfo = getVacationEnablementInfo(emp.fechaInicioContrato);
+                const periodsBreakdown = getVacationPeriodsBreakdown(vacCalc, diasGozados);
 
                 return [
                   emp.nombre,
@@ -2225,6 +2228,8 @@
                   formatDate(emp.fechaInicioContrato),
                   vacCalc.antiguedadTexto,
                   vacCalc.years,
+                  periodsBreakdown.periodoVencidosTexto,
+                  periodsBreakdown.periodoVigenteTexto,
                   vacCalc.diasTotales,
                   diasGozados,
                   diasAdelantados,
@@ -2235,7 +2240,7 @@
 
               const wsSaldos = XLSX.utils.aoa_to_sheet([...headersSaldos, ...rowsSaldos]);
               wsSaldos['!cols'] = [
-                { wch: 28 }, { wch: 14 }, { wch: 24 }, { wch: 20 }, { wch: 20 }, { wch: 22 }, { wch: 24 }, { wch: 22 }, { wch: 14 }, { wch: 16 }, { wch: 22 }, { wch: 24 }
+                { wch: 28 }, { wch: 14 }, { wch: 24 }, { wch: 20 }, { wch: 20 }, { wch: 22 }, { wch: 24 }, { wch: 36 }, { wch: 34 }, { wch: 22 }, { wch: 14 }, { wch: 16 }, { wch: 22 }, { wch: 24 }
               ];
               XLSX.utils.book_append_sheet(wb, wsSaldos, "Resumen Saldos y Períodos");
 
@@ -4112,6 +4117,65 @@
                 periodosVencidosCount: years
               };
             }
+          }
+
+          // BREAKDOWN OF OVERDUE (VENCIDOS ART. 23 D.LEG 713) VS ACTIVE (VIGENTE) VACATION PERIODS
+          function getVacationPeriodsBreakdown(vacCalc, diasGozados) {
+            const vencidosList = [];
+            const vigentesList = [];
+            let diasGozadosRestantes = parseInt(diasGozados, 10) || 0;
+            let tienePeriodoEnCurso = false;
+            let tienePeriodoGozado = false;
+
+            if (vacCalc && Array.isArray(vacCalc.periodosDetalle)) {
+              vacCalc.periodosDetalle.forEach(p => {
+                if (p.esVencido) {
+                  const rango = `${p.fechaInicioPer} - ${p.fechaAdquisicion}`;
+                  if (diasGozadosRestantes >= 30) {
+                    diasGozadosRestantes -= 30;
+                    tienePeriodoGozado = true;
+                  } else if (diasGozadosRestantes > 0) {
+                    const diasPendientes = 30 - diasGozadosRestantes;
+                    diasGozadosRestantes = 0;
+                    const detalle = `${rango} (${diasPendientes}d pend.)`;
+                    if (p.esExtemporaneo) {
+                      vencidosList.push(detalle);
+                    } else {
+                      vigentesList.push(detalle);
+                    }
+                  } else {
+                    const detalle = `${rango} (30d pend.)`;
+                    if (p.esExtemporaneo) {
+                      vencidosList.push(detalle);
+                    } else {
+                      vigentesList.push(detalle);
+                    }
+                  }
+                } else {
+                  tienePeriodoEnCurso = true;
+                }
+              });
+            }
+
+            const periodoVencidosTexto = vencidosList.length > 0
+              ? vencidosList.join(' | ')
+              : 'Ninguno';
+
+            let periodoVigenteTexto = 'Ninguno';
+            if (vigentesList.length > 0) {
+              periodoVigenteTexto = vigentesList.join(' | ');
+            } else if (vacCalc && vacCalc.years === 0 && tienePeriodoEnCurso && vacCalc.antiguedadTexto !== 'Contrato por iniciar') {
+              periodoVigenteTexto = 'Ninguno (En curso)';
+            } else if (tienePeriodoGozado) {
+              periodoVigenteTexto = 'Ninguno (Gozado)';
+            }
+
+            return {
+              vencidosCount: vencidosList.length,
+              vigentesCount: vigentesList.length,
+              periodoVencidosTexto,
+              periodoVigenteTexto
+            };
           }
 
           function formatDateObj(d) {
