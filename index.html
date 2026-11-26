@@ -1719,10 +1719,10 @@
           </div>
         </div>
 
-        <!-- CONTENEDOR OCULTO PARA REPORTE VISUAL PDF DEL TRABAJADOR (CONTROL DE VACACIONES) -->
+        <!-- CONTENEDOR OCULTO PARA REPORTE VISUAL PDF DEL TRABAJADOR (CONTROL DE VACACIONES - A4 VERTICAL) -->
         <div id="vacation-worker-report-offscreen"
-          style="position: fixed; left: -12000px; top: 0; width: 1122px; pointer-events: none; z-index: -100;">
-          <div id="vacation-worker-report-printable" style="width: 1122px; background-color: #020617; color: #f1f5f9;">
+          style="position: fixed; left: -12000px; top: 0; width: 733px; pointer-events: none; z-index: -100;">
+          <div id="vacation-worker-report-printable" style="width: 733px; background-color: #ffffff; color: #0f172a;">
             <!-- Worker Vacation Visual Report Injected Dynamically -->
           </div>
         </div>
@@ -2367,18 +2367,18 @@
 
             let finContratoHTML = '';
             if (emp.esIndeterminado) {
-              finContratoHTML = `<span style="display:inline-block;padding:2px 8px;background:rgba(59,130,246,0.12);color:#60a5fa;border:1px solid rgba(59,130,246,0.28);border-radius:6px;font-weight:600;font-size:10px;">INDETERMINADO</span>`;
+              finContratoHTML = `<span style="display:inline-block;padding:2px 7px;background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;border-radius:5px;font-weight:700;font-size:10px;">INDETERMINADO</span>`;
             } else if (emp.fechaFinContrato) {
-              finContratoHTML = `<span style="color:#e2e8f0;font-weight:600;">${escapeHTML(formatDate(emp.fechaFinContrato))}</span>`;
+              finContratoHTML = `<span style="color:#0f172a;font-weight:600;">${escapeHTML(formatDate(emp.fechaFinContrato))}</span>`;
               if (isFinPast && emp.estado !== 'Cesado') {
-                finContratoHTML += ` <span style="display:inline-block;padding:1px 6px;background:rgba(245,158,11,0.18);color:#fcd34d;border:1px solid rgba(245,158,11,0.35);border-radius:4px;font-weight:700;font-size:10px;">Continuidad Activa</span>`;
+                finContratoHTML += ` <span style="display:inline-block;padding:1px 6px;background:#fffbeb;color:#b45309;border:1px solid #fcd34d;border-radius:4px;font-weight:700;font-size:10px;">Continuidad Activa</span>`;
               }
             } else {
-              finContratoHTML = `<span style="color:#94a3b8;font-weight:500;">No especificada</span>`;
+              finContratoHTML = `<span style="color:#64748b;font-weight:500;">No especificada</span>`;
             }
 
             const rutaBadgeHTML = emp.ruta
-              ? `<span style="display:inline-block;padding:2px 8px;background:rgba(168,85,247,0.12);color:#d8b4fe;border:1px solid rgba(168,85,247,0.28);border-radius:6px;font-weight:500;font-size:11px;">Ruta: ${escapeHTML(emp.ruta)}</span>`
+              ? `<span style="display:inline-block;padding:2px 7px;background:#faf5ff;color:#7e22ce;border:1px solid #d8b4fe;border-radius:5px;font-weight:600;font-size:10px;">Ruta: ${escapeHTML(emp.ruta)}</span>`
               : '';
 
             const bannerHabilitacionTexto = periodosTotalesGanados > 0
@@ -2396,13 +2396,13 @@
             const cardAdelantoSub = diasAdelantados > 0
               ? `${diasAdelantados}d tomados sin derecho vencido`
               : '0d tomados por adelanto';
-            const cardAdelantoSubColor = diasAdelantados > 0 ? '#fcd34d' : '#94a3b8';
+            const cardAdelantoSubColor = diasAdelantados > 0 ? '#b45309' : '#64748b';
 
             const disponiblesColor = diasDisponibles <= 3
-              ? '#fb7185'
-              : (diasDisponibles <= 7 ? '#fbbf24' : '#34d399');
+              ? '#e11d48'
+              : (diasDisponibles <= 7 ? '#d97706' : '#059669');
 
-            // Period Chips HTML (Exact visual parity with Control de Vacaciones)
+            // Period Chips HTML (Light-mode white-background parity with Control de Vacaciones)
             let chipsHTML = '';
             let diasGozadosRestantes = diasGozados;
             let countExtemporaneos = 0;
@@ -2413,13 +2413,13 @@
                   if (diasGozadosRestantes >= 30) {
                     diasGozadosRestantes -= 30;
                     chipsHTML += `
-                      <div style="display:flex;flex-direction:column;gap:4px;padding:10px 14px;background:rgba(2,44,34,0.75);border:1px solid rgba(6,95,70,0.75);border-radius:12px;font-size:12px;color:#6ee7b7;break-inside:avoid;">
-                        <div style="display:flex;align-items:center;gap:8px;font-weight:600;flex-wrap:wrap;">
-                          <span style="width:8px;height:8px;border-radius:9999px;background:#34d399;display:inline-block;flex-shrink:0;"></span>
-                          <span>${escapeHTML(p.etiqueta)}: <strong style="color:#a7f3d0;">30 días</strong></span>
-                          <span style="padding:2px 7px;background:rgba(16,185,129,0.22);color:#6ee7b7;font-size:10px;font-weight:700;border-radius:5px;">GOZADO</span>
+                      <div style="display:flex;flex-direction:column;gap:3px;padding:9px 12px;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:10px;font-size:11px;color:#065f46;break-inside:avoid;">
+                        <div style="display:flex;align-items:center;gap:6px;font-weight:600;flex-wrap:wrap;">
+                          <span style="width:7px;height:7px;border-radius:9999px;background:#10b981;display:inline-block;flex-shrink:0;"></span>
+                          <span>${escapeHTML(p.etiqueta)}: <strong style="color:#064e3b;">30 días</strong></span>
+                          <span style="padding:1px 6px;background:#d1fae5;color:#047857;font-size:9px;font-weight:700;border-radius:4px;border:1px solid #6ee7b7;">GOZADO</span>
                         </div>
-                        <span style="font-size:11px;color:#94a3b8;padding-left:16px;">Ganado el ${escapeHTML(p.fechaAdquisicion)} (Descanso disfrutado)</span>
+                        <span style="font-size:10px;color:#475569;padding-left:13px;">Ganado el ${escapeHTML(p.fechaAdquisicion)} (Descanso disfrutado)</span>
                       </div>
                     `;
                   } else if (diasGozadosRestantes > 0) {
@@ -2429,65 +2429,65 @@
                     if (p.esExtemporaneo) countExtemporaneos++;
 
                     const extraTag = p.esExtemporaneo
-                      ? `<span style="padding:2px 7px;background:rgba(244,63,94,0.28);color:#fecdd3;font-size:10px;font-weight:700;border-radius:5px;border:1px solid rgba(244,63,94,0.5);">VENCIDO</span>`
-                      : `<span style="padding:2px 7px;background:rgba(59,130,246,0.22);color:#93c5fd;font-size:10px;font-weight:700;border-radius:5px;">VIGENTE</span>`;
+                      ? `<span style="padding:1px 6px;background:#ffe4e6;color:#be123c;font-size:9px;font-weight:700;border-radius:4px;border:1px solid #fda4af;">VENCIDO</span>`
+                      : `<span style="padding:1px 6px;background:#dbeafe;color:#1d4ed8;font-size:9px;font-weight:700;border-radius:4px;border:1px solid #93c5fd;">VIGENTE</span>`;
 
                     chipsHTML += `
-                      <div style="display:flex;flex-direction:column;gap:4px;padding:10px 14px;background:rgba(69,26,3,0.75);border:1px solid rgba(146,64,14,0.75);border-radius:12px;font-size:12px;color:#fcd34d;break-inside:avoid;">
-                        <div style="display:flex;align-items:center;gap:8px;font-weight:600;flex-wrap:wrap;">
-                          <span style="width:8px;height:8px;border-radius:9999px;background:#fbbf24;display:inline-block;flex-shrink:0;"></span>
-                          <span>${escapeHTML(p.etiqueta)}: <strong style="color:#fde68a;">${diasPendientesPeriodo}d pendientes</strong> (${diasParcialesGozados}d gozados)</span>
-                          <span style="padding:2px 7px;background:rgba(245,158,11,0.22);color:#fcd34d;font-size:10px;font-weight:700;border-radius:5px;">GOCE PARCIAL</span>
+                      <div style="display:flex;flex-direction:column;gap:3px;padding:9px 12px;background:#fffbeb;border:1px solid #fde68a;border-radius:10px;font-size:11px;color:#92400e;break-inside:avoid;">
+                        <div style="display:flex;align-items:center;gap:6px;font-weight:600;flex-wrap:wrap;">
+                          <span style="width:7px;height:7px;border-radius:9999px;background:#f59e0b;display:inline-block;flex-shrink:0;"></span>
+                          <span>${escapeHTML(p.etiqueta)}: <strong style="color:#78350f;">${diasPendientesPeriodo}d pendientes</strong> (${diasParcialesGozados}d gozados)</span>
+                          <span style="padding:1px 6px;background:#fef3c7;color:#b45309;font-size:9px;font-weight:700;border-radius:4px;border:1px solid #fcd34d;">GOCE PARCIAL</span>
                           ${extraTag}
                         </div>
-                        <span style="font-size:11px;color:#94a3b8;padding-left:16px;">Ganado el ${escapeHTML(p.fechaAdquisicion)} • Plazo Límite Legal D.Leg 713: <strong style="color:#e2e8f0;">${escapeHTML(p.fechaLimiteGoce)}</strong></span>
+                        <span style="font-size:10px;color:#475569;padding-left:13px;">Ganado el ${escapeHTML(p.fechaAdquisicion)} • Plazo Límite Legal D.Leg 713: <strong style="color:#0f172a;">${escapeHTML(p.fechaLimiteGoce)}</strong></span>
                       </div>
                     `;
                   } else if (p.esExtemporaneo) {
                     countExtemporaneos++;
                     chipsHTML += `
-                      <div style="display:flex;flex-direction:column;gap:4px;padding:10px 14px;background:rgba(76,5,25,0.82);border:1px solid #9f1239;border-radius:12px;font-size:12px;color:#fda4af;break-inside:avoid;">
-                        <div style="display:flex;align-items:center;gap:8px;font-weight:600;flex-wrap:wrap;">
-                          <span style="width:8px;height:8px;border-radius:9999px;background:#f43f5e;display:inline-block;flex-shrink:0;"></span>
-                          <span>${escapeHTML(p.etiqueta)}: <strong style="color:#fecdd3;">30 días libres</strong></span>
-                          <span style="padding:2px 7px;background:rgba(244,63,94,0.32);color:#fecdd3;font-size:10px;font-weight:700;border-radius:5px;border:1px solid rgba(244,63,94,0.55);">⚠️ EXTEMPORÁNEO (VENCIDO ART. 23 D.LEG 713)</span>
+                      <div style="display:flex;flex-direction:column;gap:3px;padding:9px 12px;background:#fff1f2;border:1px solid #fecdd3;border-radius:10px;font-size:11px;color:#9f1239;break-inside:avoid;">
+                        <div style="display:flex;align-items:center;gap:6px;font-weight:600;flex-wrap:wrap;">
+                          <span style="width:7px;height:7px;border-radius:9999px;background:#e11d48;display:inline-block;flex-shrink:0;"></span>
+                          <span>${escapeHTML(p.etiqueta)}: <strong style="color:#881337;">30 días libres</strong></span>
+                          <span style="padding:1px 6px;background:#ffe4e6;color:#be123c;font-size:9px;font-weight:700;border-radius:4px;border:1px solid #fda4af;">⚠️ EXTEMPORÁNEO (VENCIDO ART. 23 D.LEG 713)</span>
                         </div>
-                        <span style="font-size:11px;color:#fda4af;padding-left:16px;">¡Plazo Límite Legal Expiró el <strong style="color:#ffe4e6;">${escapeHTML(p.fechaLimiteGoce)}</strong>! (Riesgo de Indemnización Vacacional)</span>
+                        <span style="font-size:10px;color:#be123c;padding-left:13px;">¡Plazo Límite Legal Expiró el <strong style="color:#881337;">${escapeHTML(p.fechaLimiteGoce)}</strong>! (Riesgo de Indemnización Vacacional)</span>
                       </div>
                     `;
                   } else {
                     chipsHTML += `
-                      <div style="display:flex;flex-direction:column;gap:4px;padding:10px 14px;background:rgba(23,37,84,0.75);border:1px solid rgba(30,64,175,0.75);border-radius:12px;font-size:12px;color:#93c5fd;break-inside:avoid;">
-                        <div style="display:flex;align-items:center;gap:8px;font-weight:600;flex-wrap:wrap;">
-                          <span style="width:8px;height:8px;border-radius:9999px;background:#60a5fa;display:inline-block;flex-shrink:0;"></span>
-                          <span>${escapeHTML(p.etiqueta)}: <strong style="color:#bfdbfe;">30 días libres</strong></span>
-                          <span style="padding:2px 7px;background:rgba(59,130,246,0.22);color:#93c5fd;font-size:10px;font-weight:700;border-radius:5px;">VIGENTE (DENTRO DE PLAZO)</span>
+                      <div style="display:flex;flex-direction:column;gap:3px;padding:9px 12px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;font-size:11px;color:#1e40af;break-inside:avoid;">
+                        <div style="display:flex;align-items:center;gap:6px;font-weight:600;flex-wrap:wrap;">
+                          <span style="width:7px;height:7px;border-radius:9999px;background:#2563eb;display:inline-block;flex-shrink:0;"></span>
+                          <span>${escapeHTML(p.etiqueta)}: <strong style="color:#1e3a8a;">30 días libres</strong></span>
+                          <span style="padding:1px 6px;background:#dbeafe;color:#1d4ed8;font-size:9px;font-weight:700;border-radius:4px;border:1px solid #93c5fd;">VIGENTE (DENTRO DE PLAZO)</span>
                         </div>
-                        <span style="font-size:11px;color:#94a3b8;padding-left:16px;">Ganado el ${escapeHTML(p.fechaAdquisicion)} • Plazo Límite Legal para salir: <strong style="color:#e2e8f0;">${escapeHTML(p.fechaLimiteGoce)}</strong></span>
+                        <span style="font-size:10px;color:#475569;padding-left:13px;">Ganado el ${escapeHTML(p.fechaAdquisicion)} • Plazo Límite Legal para salir: <strong style="color:#0f172a;">${escapeHTML(p.fechaLimiteGoce)}</strong></span>
                       </div>
                     `;
                   }
                 } else {
                   if (diasAdelantados > 0) {
                     chipsHTML += `
-                      <div style="display:flex;flex-direction:column;gap:4px;padding:10px 14px;background:rgba(69,26,3,0.65);border:1px solid rgba(146,64,14,0.7);border-radius:12px;font-size:12px;color:#fcd34d;break-inside:avoid;">
-                        <div style="display:flex;align-items:center;gap:8px;font-weight:600;flex-wrap:wrap;">
-                          <span style="width:8px;height:8px;border-radius:9999px;background:#fbbf24;display:inline-block;flex-shrink:0;"></span>
-                          <span>${escapeHTML(p.etiqueta)}: <strong style="color:#fde68a;">${p.dias} días acumulados</strong> (${diasAdelantados}d tomados por adelanto)</span>
-                          <span style="padding:2px 7px;background:rgba(245,158,11,0.22);color:#fcd34d;font-size:10px;font-weight:700;border-radius:5px;border:1px solid rgba(245,158,11,0.35);">ADELANTO EN GOCE</span>
+                      <div style="display:flex;flex-direction:column;gap:3px;padding:9px 12px;background:#fffbeb;border:1px solid #fde68a;border-radius:10px;font-size:11px;color:#92400e;break-inside:avoid;">
+                        <div style="display:flex;align-items:center;gap:6px;font-weight:600;flex-wrap:wrap;">
+                          <span style="width:7px;height:7px;border-radius:9999px;background:#f59e0b;display:inline-block;flex-shrink:0;"></span>
+                          <span>${escapeHTML(p.etiqueta)}: <strong style="color:#78350f;">${p.dias} días acumulados</strong> (${diasAdelantados}d tomados por adelanto)</span>
+                          <span style="padding:1px 6px;background:#fef3c7;color:#b45309;font-size:9px;font-weight:700;border-radius:4px;border:1px solid #fcd34d;">ADELANTO EN GOCE</span>
                         </div>
-                        <span style="font-size:11px;color:#fde68a;opacity:0.85;padding-left:16px;">El trabajador está haciendo uso de <strong>${diasAdelantados} días adelantados</strong> sin haber completado aún este período de servicio.</span>
+                        <span style="font-size:10px;color:#92400e;padding-left:13px;">El trabajador está haciendo uso de <strong>${diasAdelantados} días adelantados</strong> sin haber completado aún este período de servicio.</span>
                       </div>
                     `;
                   } else {
                     chipsHTML += `
-                      <div style="display:flex;flex-direction:column;gap:4px;padding:10px 14px;background:rgba(30,41,59,0.85);border:1px solid #334155;border-radius:12px;font-size:12px;color:#cbd5e1;break-inside:avoid;">
-                        <div style="display:flex;align-items:center;gap:8px;font-weight:600;flex-wrap:wrap;">
-                          <span style="width:8px;height:8px;border-radius:9999px;background:#c084fc;display:inline-block;flex-shrink:0;"></span>
-                          <span>${escapeHTML(p.etiqueta)}: <strong style="color:#f8fafc;">${p.dias} días acumulados</strong></span>
-                          <span style="padding:2px 7px;background:rgba(168,85,247,0.22);color:#d8b4fe;font-size:10px;font-weight:700;border-radius:5px;">EN CURSO</span>
+                      <div style="display:flex;flex-direction:column;gap:3px;padding:9px 12px;background:#f8fafc;border:1px solid #cbd5e1;border-radius:10px;font-size:11px;color:#334155;break-inside:avoid;">
+                        <div style="display:flex;align-items:center;gap:6px;font-weight:600;flex-wrap:wrap;">
+                          <span style="width:7px;height:7px;border-radius:9999px;background:#9333ea;display:inline-block;flex-shrink:0;"></span>
+                          <span>${escapeHTML(p.etiqueta)}: <strong style="color:#0f172a;">${p.dias} días acumulados</strong></span>
+                          <span style="padding:1px 6px;background:#f3e8ff;color:#7e22ce;font-size:9px;font-weight:700;border-radius:4px;border:1px solid #d8b4fe;">EN CURSO</span>
                         </div>
-                        <span style="font-size:11px;color:#94a3b8;padding-left:16px;">Acumulación proporcional a 2.5 días/mes (Adquisición completa al ${escapeHTML(p.fechaAdquisicion)})</span>
+                        <span style="font-size:10px;color:#64748b;padding-left:13px;">Acumulación proporcional a 2.5 días/mes (Adquisición completa al ${escapeHTML(p.fechaAdquisicion)})</span>
                       </div>
                     `;
                   }
@@ -2496,57 +2496,57 @@
             }
 
             const summaryBadgeHTML = countExtemporaneos > 0
-              ? `<span style="padding:4px 12px;background:rgba(244,63,94,0.22);color:#fda4af;border:1px solid rgba(244,63,94,0.4);border-radius:9999px;font-size:11px;font-weight:700;">⚠️ ${countExtemporaneos} Período(s) Extemporáneo(s) (Riesgo Art. 23 D.Leg 713)</span>`
-              : `<span style="padding:4px 12px;background:rgba(168,85,247,0.22);color:#d8b4fe;border:1px solid rgba(168,85,247,0.35);border-radius:9999px;font-size:11px;font-weight:700;">${periodosVencidosPendientes} Período(s) Vencido(s) Pendiente(s)</span>`;
+              ? `<span style="padding:3px 10px;background:#fff1f2;color:#be123c;border:1px solid #fda4af;border-radius:9999px;font-size:10px;font-weight:700;">⚠️ ${countExtemporaneos} Período(s) Extemporáneo(s) (Riesgo Art. 23 D.Leg 713)</span>`
+              : `<span style="padding:3px 10px;background:#faf5ff;color:#7e22ce;border:1px solid #d8b4fe;border-radius:9999px;font-size:10px;font-weight:700;">${periodosVencidosPendientes} Período(s) Vencido(s) Pendiente(s)</span>`;
 
             // History Table Rows HTML
             let historyContentHTML = '';
             if (empVacations.length === 0) {
               historyContentHTML = `
-                <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;text-align:center;">
-                  <div style="width:48px;height:48px;border-radius:9999px;background:rgba(30,41,59,0.7);display:flex;align-items:center;justify-content:center;color:#94a3b8;margin-bottom:10px;">
-                    <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:34px 16px;text-align:center;background:#ffffff;">
+                  <div style="width:44px;height:44px;border-radius:9999px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;color:#64748b;margin-bottom:8px;">
+                    <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
                   </div>
-                  <div style="font-size:14px;font-weight:600;color:#e2e8f0;">Sin historial de vacaciones</div>
-                  <div style="font-size:12px;color:#94a3b8;margin-top:4px;">Este empleado aún no tiene vacaciones registradas ni solicitudes pendientes.</div>
+                  <div style="font-size:13px;font-weight:600;color:#1e293b;">Sin historial de vacaciones</div>
+                  <div style="font-size:11px;color:#64748b;margin-top:3px;">Este empleado aún no tiene vacaciones registradas ni solicitudes pendientes.</div>
                 </div>
               `;
             } else {
               const rowsHTML = empVacations.map(vac => {
                 const isPasada = vac.tipo === 'Pasadas';
                 const tipoBadge = isPasada
-                  ? `<span style="display:inline-block;padding:3px 9px;background:#1e293b;color:#cbd5e1;border-radius:7px;font-size:11px;font-weight:500;border:1px solid #334155;">Historial Pasado</span>`
-                  : `<span style="display:inline-block;padding:3px 9px;background:rgba(59,130,246,0.12);color:#60a5fa;border-radius:7px;font-size:11px;font-weight:500;border:1px solid rgba(59,130,246,0.28);">Nueva Solicitud</span>`;
+                  ? `<span style="display:inline-block;padding:2px 8px;background:#f1f5f9;color:#334155;border-radius:6px;font-size:10px;font-weight:600;border:1px solid #cbd5e1;">Historial Pasado</span>`
+                  : `<span style="display:inline-block;padding:2px 8px;background:#eff6ff;color:#1d4ed8;border-radius:6px;font-size:10px;font-weight:600;border:1px solid #bfdbfe;">Nueva Solicitud</span>`;
 
-                const periodoBadge = `<div style="margin-top:5px;"><span style="display:inline-block;padding:2px 8px;background:rgba(168,85,247,0.12);color:#d8b4fe;border:1px solid rgba(168,85,247,0.28);border-radius:5px;font-weight:600;font-size:10px;">${escapeHTML(vac.periodo || 'Ciclo General')}</span></div>`;
+                const periodoBadge = `<div style="margin-top:4px;"><span style="display:inline-block;padding:2px 7px;background:#faf5ff;color:#7e22ce;border:1px solid #d8b4fe;border-radius:4px;font-weight:600;font-size:9px;">${escapeHTML(vac.periodo || 'Ciclo General')}</span></div>`;
 
                 const isApproved = vac.estado === 'Aprobado' || !vac.estado;
                 const estadoBadge = isApproved
-                  ? `<span style="display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:9999px;font-size:11px;font-weight:600;background:rgba(16,185,129,0.12);color:#34d399;border:1px solid rgba(16,185,129,0.28);"><span style="width:6px;height:6px;border-radius:9999px;background:#34d399;display:inline-block;"></span>Aprobado</span>`
-                  : `<span style="display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:9999px;font-size:11px;font-weight:600;background:rgba(245,158,11,0.12);color:#fbbf24;border:1px solid rgba(245,158,11,0.28);"><span style="width:6px;height:6px;border-radius:9999px;background:#fbbf24;display:inline-block;"></span>${escapeHTML(vac.estado)}</span>`;
+                  ? `<span style="display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:9999px;font-size:10px;font-weight:600;background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;"><span style="width:5px;height:5px;border-radius:9999px;background:#10b981;display:inline-block;"></span>Aprobado</span>`
+                  : `<span style="display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:9999px;font-size:10px;font-weight:600;background:#fffbeb;color:#b45309;border:1px solid #fde68a;"><span style="width:5px;height:5px;border-radius:9999px;background:#f59e0b;display:inline-block;"></span>${escapeHTML(vac.estado)}</span>`;
 
                 const motivoHTML = vac.motivo
                   ? escapeHTML(vac.motivo)
-                  : `<span style="font-style:italic;color:#64748b;">Sin observaciones</span>`;
+                  : `<span style="font-style:italic;color:#94a3b8;">Sin observaciones</span>`;
 
                 return `
-                  <tr style="border-bottom:1px solid rgba(30,41,59,0.85);break-inside:avoid;">
-                    <td style="padding:11px 16px;vertical-align:middle;">
+                  <tr style="border-bottom:1px solid #e2e8f0;background:#ffffff;break-inside:avoid;">
+                    <td style="padding:9px 12px;vertical-align:middle;">
                       ${tipoBadge}
                       ${periodoBadge}
                     </td>
-                    <td style="padding:11px 16px;vertical-align:middle;color:#e2e8f0;font-weight:500;white-space:nowrap;">
-                      ${escapeHTML(formatDate(vac.fechaInicio))} <span style="color:#64748b;margin:0 4px;">→</span> ${escapeHTML(formatDate(vac.fechaFin))}
+                    <td style="padding:9px 12px;vertical-align:middle;color:#0f172a;font-weight:500;font-size:11px;white-space:nowrap;">
+                      ${escapeHTML(formatDate(vac.fechaInicio))} <span style="color:#94a3b8;margin:0 3px;">→</span> ${escapeHTML(formatDate(vac.fechaFin))}
                     </td>
-                    <td style="padding:11px 16px;vertical-align:middle;text-align:center;font-weight:700;color:#34d399;font-size:14px;">
+                    <td style="padding:9px 12px;vertical-align:middle;text-align:center;font-weight:700;color:#059669;font-size:13px;">
                       ${parseInt(vac.dias, 10) || 0}
                     </td>
-                    <td style="padding:11px 16px;vertical-align:middle;color:#cbd5e1;font-size:12px;">
+                    <td style="padding:9px 12px;vertical-align:middle;color:#334155;font-size:11px;">
                       ${motivoHTML}
                     </td>
-                    <td style="padding:11px 16px;vertical-align:middle;">
+                    <td style="padding:9px 12px;vertical-align:middle;">
                       ${estadoBadge}
                     </td>
                   </tr>
@@ -2554,14 +2554,14 @@
               }).join('');
 
               historyContentHTML = `
-                <table style="width:100%;border-collapse:collapse;text-align:left;font-size:13px;">
+                <table style="width:100%;border-collapse:collapse;text-align:left;font-size:11px;">
                   <thead>
-                    <tr style="background:rgba(2,6,23,0.75);border-bottom:1px solid #1e293b;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#94a3b8;">
-                      <th style="padding:11px 16px;">Tipo / Categoría</th>
-                      <th style="padding:11px 16px;">Período (Inicio - Fin)</th>
-                      <th style="padding:11px 16px;text-align:center;">Días</th>
-                      <th style="padding:11px 16px;">Motivo / Observaciones</th>
-                      <th style="padding:11px 16px;">Estado</th>
+                    <tr style="background:#f1f5f9;border-bottom:1px solid #cbd5e1;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;color:#475569;">
+                      <th style="padding:9px 12px;">Tipo / Categoría</th>
+                      <th style="padding:9px 12px;">Período (Inicio - Fin)</th>
+                      <th style="padding:9px 12px;text-align:center;">Días</th>
+                      <th style="padding:9px 12px;">Motivo / Observaciones</th>
+                      <th style="padding:9px 12px;">Estado</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -2572,138 +2572,138 @@
             }
 
             printableArea.innerHTML = `
-              <div style="width:1122px;min-height:792px;box-sizing:border-box;padding:24px 28px;background:#020617;color:#f1f5f9;font-family:'Inter',Arial,sans-serif;display:flex;flex-direction:column;gap:16px;">
+              <div style="width:733px;box-sizing:border-box;padding:4px 2px;background:#ffffff;color:#0f172a;font-family:'Inter',Arial,sans-serif;display:flex;flex-direction:column;gap:14px;">
 
                 <!-- Top System Header -->
-                <div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:14px;border-bottom:1px solid #1e293b;">
-                  <div style="display:flex;align-items:center;gap:12px;">
-                    <div style="width:40px;height:40px;border-radius:12px;background:#059669;display:flex;align-items:center;justify-content:center;color:#ffffff;box-shadow:0 4px 12px rgba(5,150,105,0.25);">
-                      <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <div style="font-size:18px;font-weight:700;color:#ffffff;letter-spacing:-0.01em;">Sistema de Gestión de RRHH — Control de Vacaciones</div>
-                      <div style="font-size:12px;color:#94a3b8;margin-top:2px;">Reporte Individual del Trabajador • Cumplimiento D.Leg. N° 713</div>
-                    </div>
-                  </div>
-                  <div style="text-align:right;font-size:11px;color:#94a3b8;">
-                    <div>Fecha de emisión: <strong style="color:#e2e8f0;">${escapeHTML(fechaEmisionStr)}</strong></div>
-                    <div style="margin-top:3px;">Próxima Habilitación: <strong style="color:#c084fc;">${escapeHTML(enablementInfo.fechaProximaHabilitacion)}</strong></div>
-                  </div>
-                </div>
-
-                <!-- Contract Info Banner (Matching UI Banner) -->
-                <div style="background:#0f172a;border:1px solid #1e293b;border-radius:16px;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:14px;break-inside:avoid;">
-                  <div style="display:flex;align-items:center;gap:12px;">
-                    <div style="width:38px;height:38px;border-radius:10px;background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.25);display:flex;align-items:center;justify-content:center;color:#60a5fa;flex-shrink:0;">
+                <div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:12px;border-bottom:2px solid #e2e8f0;">
+                  <div style="display:flex;align-items:center;gap:10px;">
+                    <div style="width:36px;height:36px;border-radius:10px;background:#059669;display:flex;align-items:center;justify-content:center;color:#ffffff;flex-shrink:0;">
                       <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
                     </div>
                     <div>
-                      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                        <span style="font-size:15px;font-weight:700;color:#f8fafc;">${escapeHTML(emp.nombre)}</span>
-                        ${emp.dni ? `<span style="padding:2px 8px;background:#1e293b;color:#cbd5e1;border:1px solid #334155;border-radius:6px;font-size:11px;font-weight:600;">DNI: ${escapeHTML(emp.dni)}</span>` : ''}
-                        ${emp.puesto ? `<span style="padding:2px 8px;background:rgba(59,130,246,0.1);color:#93c5fd;border:1px solid rgba(59,130,246,0.22);border-radius:6px;font-size:11px;font-weight:500;">${escapeHTML(emp.puesto)}</span>` : ''}
-                        ${emp.departamento ? `<span style="padding:2px 8px;background:rgba(16,185,129,0.1);color:#6ee7b7;border:1px solid rgba(16,185,129,0.22);border-radius:6px;font-size:11px;font-weight:500;">${escapeHTML(emp.departamento)}</span>` : ''}
-                        ${rutaBadgeHTML}
-                      </div>
-                      <div style="font-size:12px;color:#94a3b8;margin-top:5px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                        <span>Inicio Contrato: <strong style="color:#e2e8f0;">${escapeHTML(formatDate(emp.fechaInicioContrato))}</strong></span>
-                        <span>•</span>
-                        <span>Fin: ${finContratoHTML}</span>
-                        <span>•</span>
-                        <span>Antigüedad: <strong style="color:#34d399;">${escapeHTML(vacCalculated.antiguedadTexto)}</strong></span>
-                      </div>
+                      <div style="font-size:15px;font-weight:700;color:#0f172a;letter-spacing:-0.01em;">Sistema de Gestión de RRHH — Control de Vacaciones</div>
+                      <div style="font-size:11px;color:#475569;margin-top:1px;">Reporte Individual del Trabajador • Cumplimiento D.Leg. N° 713</div>
                     </div>
                   </div>
-                  <div style="background:rgba(59,7,100,0.65);border:1px solid rgba(107,33,168,0.6);padding:9px 14px;border-radius:12px;color:#e9d5ff;display:flex;align-items:center;gap:8px;font-size:12px;flex-shrink:0;">
-                    <svg width="16" height="16" fill="none" stroke="#c084fc" viewBox="0 0 24 24" style="flex-shrink:0;">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span style="color:#cbd5e1;">${bannerHabilitacionTexto}</span>
+                  <div style="text-align:right;font-size:10px;color:#475569;line-height:1.5;">
+                    <div>Fecha de emisión: <strong style="color:#0f172a;">${escapeHTML(fechaEmisionStr)}</strong></div>
+                    <div>Próxima Habilitación: <strong style="color:#7e22ce;">${escapeHTML(enablementInfo.fechaProximaHabilitacion)}</strong></div>
                   </div>
                 </div>
 
-                <!-- 5 KPI Balance Cards (Exact 5-Column System Layout) -->
-                <div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;break-inside:avoid;">
+                <!-- Contract Info Banner (Matching UI Banner on White) -->
+                <div style="background:#f8fafc;border:1px solid #cbd5e1;border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:10px;break-inside:avoid;">
+                  <div style="display:flex;align-items:flex-start;gap:10px;">
+                    <div style="width:34px;height:34px;border-radius:9px;background:#eff6ff;border:1px solid #bfdbfe;display:flex;align-items:center;justify-content:center;color:#2563eb;flex-shrink:0;">
+                      <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <div style="flex:1;min-width:0;">
+                      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                        <span style="font-size:14px;font-weight:700;color:#0f172a;">${escapeHTML(emp.nombre)}</span>
+                        ${emp.dni ? `<span style="padding:2px 7px;background:#e2e8f0;color:#1e293b;border:1px solid #cbd5e1;border-radius:5px;font-size:10px;font-weight:600;">DNI: ${escapeHTML(emp.dni)}</span>` : ''}
+                        ${emp.puesto ? `<span style="padding:2px 7px;background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;border-radius:5px;font-size:10px;font-weight:600;">${escapeHTML(emp.puesto)}</span>` : ''}
+                        ${emp.departamento ? `<span style="padding:2px 7px;background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;border-radius:5px;font-size:10px;font-weight:600;">${escapeHTML(emp.departamento)}</span>` : ''}
+                        ${rutaBadgeHTML}
+                      </div>
+                      <div style="font-size:11px;color:#475569;margin-top:5px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                        <span>Inicio Contrato: <strong style="color:#0f172a;">${escapeHTML(formatDate(emp.fechaInicioContrato))}</strong></span>
+                        <span>•</span>
+                        <span>Fin: ${finContratoHTML}</span>
+                        <span>•</span>
+                        <span>Antigüedad: <strong style="color:#047857;">${escapeHTML(vacCalculated.antiguedadTexto)}</strong></span>
+                      </div>
+                    </div>
+                  </div>
+                  <div style="background:#faf5ff;border:1px solid #d8b4fe;padding:7px 12px;border-radius:9px;color:#581c87;display:flex;align-items:center;gap:8px;font-size:11px;">
+                    <svg width="15" height="15" fill="none" stroke="#7e22ce" viewBox="0 0 24 24" style="flex-shrink:0;">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>${bannerHabilitacionTexto}</span>
+                  </div>
+                </div>
+
+                <!-- 5 KPI Balance Cards (Balanced 3 + 2 Grid for A4 Portrait) -->
+                <div style="display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;break-inside:avoid;">
 
                   <!-- CARD 1: Días Totales Ganados -->
-                  <div style="background:#0f172a;border:1px solid #1e293b;border-radius:16px;padding:16px;display:flex;align-items:center;gap:12px;">
-                    <div style="width:42px;height:42px;border-radius:12px;background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.25);display:flex;align-items:center;justify-content:center;color:#60a5fa;flex-shrink:0;">
-                      <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div style="grid-column:span 2;background:#ffffff;border:1px solid #cbd5e1;border-radius:12px;padding:12px;display:flex;align-items:center;gap:10px;">
+                    <div style="width:36px;height:36px;border-radius:10px;background:#eff6ff;border:1px solid #bfdbfe;display:flex;align-items:center;justify-content:center;color:#2563eb;flex-shrink:0;">
+                      <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
                     </div>
                     <div style="min-width:0;">
-                      <div style="font-size:10px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;">Días Totales Ganados</div>
-                      <div style="display:flex;align-items:baseline;gap:4px;margin-top:3px;">
-                        <span style="font-size:22px;font-weight:700;color:#ffffff;line-height:1.1;">${diasTotales}</span>
-                        <span style="font-size:11px;color:#94a3b8;">días (2.5d/mes)</span>
+                      <div style="font-size:9px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.04em;">Días Totales Ganados</div>
+                      <div style="display:flex;align-items:baseline;gap:4px;margin-top:2px;">
+                        <span style="font-size:20px;font-weight:700;color:#0f172a;line-height:1.1;">${diasTotales}</span>
+                        <span style="font-size:10px;color:#64748b;">días (2.5d/mes)</span>
                       </div>
                     </div>
                   </div>
 
                   <!-- CARD 2: Períodos Ganados -->
-                  <div style="background:linear-gradient(135deg,rgba(59,7,100,0.35),#0f172a);border:1px solid rgba(88,28,135,0.6);border-radius:16px;padding:16px;display:flex;align-items:center;gap:12px;">
-                    <div style="width:42px;height:42px;border-radius:12px;background:rgba(168,85,247,0.12);border:1px solid rgba(168,85,247,0.28);display:flex;align-items:center;justify-content:center;color:#c084fc;flex-shrink:0;">
-                      <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div style="grid-column:span 2;background:#faf5ff;border:1px solid #d8b4fe;border-radius:12px;padding:12px;display:flex;align-items:center;gap:10px;">
+                    <div style="width:36px;height:36px;border-radius:10px;background:#f3e8ff;border:1px solid #d8b4fe;display:flex;align-items:center;justify-content:center;color:#7e22ce;flex-shrink:0;">
+                      <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                       </svg>
                     </div>
                     <div style="min-width:0;">
-                      <div style="font-size:10px;font-weight:700;color:#c084fc;text-transform:uppercase;letter-spacing:0.05em;">Períodos Ganados</div>
-                      <div style="font-size:16px;font-weight:700;color:#ffffff;margin-top:3px;line-height:1.2;">${cardPeriodosMain}</div>
-                      <div style="font-size:10px;color:#94a3b8;margin-top:3px;line-height:1.3;">${cardPeriodosSub}</div>
+                      <div style="font-size:9px;font-weight:700;color:#7e22ce;text-transform:uppercase;letter-spacing:0.04em;">Períodos Ganados</div>
+                      <div style="font-size:14px;font-weight:700;color:#0f172a;margin-top:2px;line-height:1.15;">${cardPeriodosMain}</div>
+                      <div style="font-size:9px;color:#64748b;margin-top:2px;line-height:1.25;">${cardPeriodosSub}</div>
                     </div>
                   </div>
 
                   <!-- CARD 3: Días Gozados -->
-                  <div style="background:#0f172a;border:1px solid #1e293b;border-radius:16px;padding:16px;display:flex;align-items:center;gap:12px;">
-                    <div style="width:42px;height:42px;border-radius:12px;background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.25);display:flex;align-items:center;justify-content:center;color:#fbbf24;flex-shrink:0;">
-                      <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div style="grid-column:span 2;background:#ffffff;border:1px solid #cbd5e1;border-radius:12px;padding:12px;display:flex;align-items:center;gap:10px;">
+                    <div style="width:36px;height:36px;border-radius:10px;background:#fffbeb;border:1px solid #fde68a;display:flex;align-items:center;justify-content:center;color:#d97706;flex-shrink:0;">
+                      <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                     </div>
                     <div style="min-width:0;">
-                      <div style="font-size:10px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;">Días Gozados</div>
-                      <div style="display:flex;align-items:baseline;gap:4px;margin-top:3px;">
-                        <span style="font-size:22px;font-weight:700;color:#fbbf24;line-height:1.1;">${diasGozados}</span>
-                        <span style="font-size:11px;color:#94a3b8;">días</span>
+                      <div style="font-size:9px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.04em;">Días Gozados</div>
+                      <div style="display:flex;align-items:baseline;gap:4px;margin-top:2px;">
+                        <span style="font-size:20px;font-weight:700;color:#d97706;line-height:1.1;">${diasGozados}</span>
+                        <span style="font-size:10px;color:#64748b;">días</span>
                       </div>
                     </div>
                   </div>
 
                   <!-- CARD 4: Adelanto Vacaciones -->
-                  <div style="background:linear-gradient(135deg,rgba(69,26,3,0.3),#0f172a);border:1px solid rgba(120,53,15,0.5);border-radius:16px;padding:16px;display:flex;align-items:center;gap:12px;">
-                    <div style="width:42px;height:42px;border-radius:12px;background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.25);display:flex;align-items:center;justify-content:center;color:#fbbf24;flex-shrink:0;">
-                      <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div style="grid-column:span 3;background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:12px;display:flex;align-items:center;gap:10px;">
+                    <div style="width:36px;height:36px;border-radius:10px;background:#fef3c7;border:1px solid #fcd34d;display:flex;align-items:center;justify-content:center;color:#d97706;flex-shrink:0;">
+                      <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
                       </svg>
                     </div>
                     <div style="min-width:0;">
-                      <div style="font-size:10px;font-weight:700;color:#fbbf24;text-transform:uppercase;letter-spacing:0.05em;">Adelanto Vacaciones</div>
-                      <div style="display:flex;align-items:baseline;gap:4px;margin-top:3px;">
-                        <span style="font-size:22px;font-weight:700;color:#fbbf24;line-height:1.1;">${diasAdelantados}</span>
-                        <span style="font-size:11px;color:#94a3b8;">días</span>
+                      <div style="font-size:9px;font-weight:700;color:#b45309;text-transform:uppercase;letter-spacing:0.04em;">Adelanto Vacaciones</div>
+                      <div style="display:flex;align-items:baseline;gap:4px;margin-top:2px;">
+                        <span style="font-size:20px;font-weight:700;color:#d97706;line-height:1.1;">${diasAdelantados}</span>
+                        <span style="font-size:10px;color:#64748b;">días</span>
                       </div>
-                      <div style="font-size:10px;color:${cardAdelantoSubColor};margin-top:3px;font-weight:500;">${cardAdelantoSub}</div>
+                      <div style="font-size:9px;color:${cardAdelantoSubColor};margin-top:2px;font-weight:600;">${cardAdelantoSub}</div>
                     </div>
                   </div>
 
                   <!-- CARD 5: Días Disponibles -->
-                  <div style="background:#0f172a;border:1px solid #1e293b;border-radius:16px;padding:16px;display:flex;align-items:center;gap:12px;">
-                    <div style="width:42px;height:42px;border-radius:12px;background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.25);display:flex;align-items:center;justify-content:center;color:#34d399;flex-shrink:0;">
-                      <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div style="grid-column:span 3;background:#ffffff;border:1px solid #cbd5e1;border-radius:12px;padding:12px;display:flex;align-items:center;gap:10px;">
+                    <div style="width:36px;height:36px;border-radius:10px;background:#ecfdf5;border:1px solid #a7f3d0;display:flex;align-items:center;justify-content:center;color:#059669;flex-shrink:0;">
+                      <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                     </div>
                     <div style="min-width:0;">
-                      <div style="font-size:10px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;">Días Disponibles</div>
-                      <div style="display:flex;align-items:baseline;gap:4px;margin-top:3px;">
-                        <span style="font-size:22px;font-weight:700;color:${disponiblesColor};line-height:1.1;">${diasDisponibles}</span>
-                        <span style="font-size:11px;color:#94a3b8;">días libres</span>
+                      <div style="font-size:9px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.04em;">Días Disponibles</div>
+                      <div style="display:flex;align-items:baseline;gap:4px;margin-top:2px;">
+                        <span style="font-size:20px;font-weight:700;color:${disponiblesColor};line-height:1.1;">${diasDisponibles}</span>
+                        <span style="font-size:10px;color:#64748b;">días libres</span>
                       </div>
                     </div>
                   </div>
@@ -2711,31 +2711,31 @@
                 </div>
 
                 <!-- Annual Vacation Periods Breakdown Card -->
-                <div style="background:#0f172a;border:1px solid #1e293b;border-radius:16px;padding:16px 18px;display:flex;flex-direction:column;gap:12px;break-inside:avoid;">
-                  <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
-                    <div style="font-size:12px;font-weight:700;color:#cbd5e1;text-transform:uppercase;letter-spacing:0.05em;display:flex;align-items:center;gap:8px;">
-                      <svg width="16" height="16" fill="none" stroke="#c084fc" viewBox="0 0 24 24">
+                <div style="background:#ffffff;border:1px solid #cbd5e1;border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px;break-inside:avoid;">
+                  <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+                    <div style="font-size:11px;font-weight:700;color:#1e293b;text-transform:uppercase;letter-spacing:0.04em;display:flex;align-items:center;gap:6px;">
+                      <svg width="15" height="15" fill="none" stroke="#7e22ce" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                       </svg>
                       <span>Estado de Períodos Anuales Ganados (Derecho Adquirido por Año de Servicio)</span>
                     </div>
                     ${summaryBadgeHTML}
                   </div>
-                  <div style="display:flex;flex-wrap:wrap;gap:10px;">
-                    ${chipsHTML || '<span style="font-size:12px;color:#94a3b8;">Sin períodos registrados</span>'}
+                  <div style="display:flex;flex-direction:column;gap:8px;">
+                    ${chipsHTML || '<span style="font-size:11px;color:#64748b;">Sin períodos registrados</span>'}
                   </div>
                 </div>
 
                 <!-- Vacations History Table Card -->
-                <div style="background:#0f172a;border:1px solid #1e293b;border-radius:16px;overflow:hidden;flex-grow:1;display:flex;flex-direction:column;">
-                  <div style="padding:14px 18px;border-bottom:1px solid #1e293b;display:flex;align-items:center;justify-content:space-between;">
-                    <div style="font-size:15px;font-weight:600;color:#ffffff;display:flex;align-items:center;gap:8px;">
-                      <svg width="18" height="18" fill="none" stroke="#34d399" viewBox="0 0 24 24">
+                <div style="background:#ffffff;border:1px solid #cbd5e1;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;">
+                  <div style="padding:11px 14px;background:#f8fafc;border-bottom:1px solid #cbd5e1;display:flex;align-items:center;justify-content:space-between;">
+                    <div style="font-size:13px;font-weight:700;color:#0f172a;display:flex;align-items:center;gap:7px;">
+                      <svg width="16" height="16" fill="none" stroke="#059669" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                       </svg>
                       <span>Historial y Solicitudes de Vacaciones</span>
                     </div>
-                    <span style="padding:3px 10px;background:#1e293b;color:#cbd5e1;font-size:11px;font-weight:600;border-radius:9999px;">
+                    <span style="padding:2px 9px;background:#e2e8f0;color:#334155;font-size:10px;font-weight:600;border-radius:9999px;">
                       ${empVacations.length} ${empVacations.length === 1 ? 'registro' : 'registros'}
                     </span>
                   </div>
@@ -2745,7 +2745,7 @@
                 </div>
 
                 <!-- Document Footer -->
-                <div style="display:flex;align-items:center;justify-content:space-between;padding-top:10px;border-top:1px solid #1e293b;font-size:11px;color:#64748b;">
+                <div style="display:flex;align-items:center;justify-content:space-between;padding-top:8px;border-top:1px solid #e2e8f0;font-size:10px;color:#64748b;">
                   <span>Sistema de Gestión de RRHH • Reporte de Control de Vacaciones</span>
                   <span>Trabajador: ${escapeHTML(emp.nombre)} • Emitido el ${escapeHTML(fechaEmisionStr)}</span>
                 </div>
@@ -2765,7 +2765,7 @@
 
             setTimeout(() => {
               const opt = {
-                margin: 0,
+                margin: 8,
                 filename: filename,
                 image: { type: 'jpeg', quality: 0.98 },
                 html2canvas: {
@@ -2773,10 +2773,10 @@
                   useCORS: true,
                   logging: false,
                   scrollY: 0,
-                  backgroundColor: '#020617',
-                  windowWidth: 1122
+                  backgroundColor: '#ffffff',
+                  windowWidth: 733
                 },
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
                 pagebreak: { mode: ['css', 'legacy'] }
               };
 
