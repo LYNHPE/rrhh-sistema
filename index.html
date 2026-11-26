@@ -169,14 +169,14 @@
         <div class="h-5 w-[1px] bg-slate-800 mx-1 hidden sm:block"></div>
 
         <!-- Export Excel Sheet per Active Module -->
-        <button onclick="exportActiveModuleExcel()"
+        <button id="btn-export-active-module" onclick="exportActiveModuleExcel()"
           title="Exportar copia en formato de hoja de cálculo Excel (.xlsx) del módulo activo"
           class="flex items-center gap-1.5 px-3 py-2 text-xs text-blue-300 hover:text-white bg-blue-600/20 hover:bg-blue-600/30 rounded-xl transition cursor-pointer font-semibold border border-blue-500/30 shadow-sm">
           <svg class="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
           </svg>
-          <span>Exportar Copia</span>
+          <span id="btn-export-active-module-label">Exportar Copia</span>
         </button>
 
         <!-- Import Button -> Opens Excel Import Popup Modal -->
@@ -326,6 +326,16 @@
 
         <!-- Action Buttons -->
         <div class="flex items-end gap-2.5 flex-wrap">
+          <button type="button" id="btn-export-employee-vacation-report" onclick="exportCurrentEmployeeVacationReport()"
+            title="Descargar reporte de vacaciones en Excel (.xlsx) solo del trabajador actual"
+            class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 hover:text-white border border-blue-500/30 font-medium px-4 py-2.5 rounded-xl shadow-lg shadow-blue-600/10 transition duration-150 text-sm cursor-pointer">
+            <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <span>Reporte del Trabajador</span>
+          </button>
+
           <button id="btn-open-vacation-modal"
             class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-medium px-4 py-2.5 rounded-xl shadow-lg shadow-emerald-600/20 transition duration-150 text-sm cursor-pointer">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2244,9 +2254,9 @@
               ];
               XLSX.utils.book_append_sheet(wb, wsSaldos, "Resumen Saldos y Períodos");
 
-              const filename = `copia_control_vacaciones_completo_${fechaHoy}.xlsx`;
+              const filename = `backup_control_vacaciones_completo_${fechaHoy}.xlsx`;
               XLSX.writeFile(wb, filename);
-              showToast("¡Copia del Control de Vacaciones (Historial y Saldos de todos los trabajadores) exportada en Excel!", "success");
+              showToast("¡Backup del Control de Vacaciones (Historial y Saldos de todos los trabajadores) exportado en Excel!", "success");
 
             } else if (moduleType === 'cesados') {
               const cesadosList = employees.filter(e => e.estado === 'Cesado');
@@ -2302,6 +2312,169 @@
             } else if (moduleType === 'tareo') {
               exportTareoExcel();
             }
+          }
+
+          // EXPORT SINGLE-EMPLOYEE VACATION REPORT (CURRENTLY SELECTED WORKER)
+          function exportCurrentEmployeeVacationReport() {
+            if (typeof XLSX === 'undefined') {
+              alert("Error: La librería XLSX no está cargada.");
+              return;
+            }
+
+            const selectedEmpId = vacationEmployeeSelect ? parseInt(vacationEmployeeSelect.value, 10) : NaN;
+            const emp = employees.find(e => Number(e.id) === selectedEmpId);
+
+            if (!emp) {
+              alert("Por favor selecciona un trabajador en el módulo de vacaciones para generar su reporte.");
+              return;
+            }
+
+            const fechaHoy = new Date().toISOString().split('T')[0];
+            const wb = XLSX.utils.book_new();
+
+            const vacCalc = calculateContractVacations(emp);
+            const empVacAll = vacations.filter(v => Number(v.employeeId) === Number(emp.id));
+            const empVacApproved = empVacAll.filter(v => v.estado === 'Aprobado' || !v.estado);
+            const diasGozados = empVacApproved.reduce((acc, curr) => acc + (parseInt(curr.dias, 10) || 0), 0);
+            const diasDisponibles = Math.max(0, vacCalc.diasVencidosCompleto - diasGozados);
+            const diasAdelantados = Math.max(0, diasGozados - vacCalc.diasVencidosCompleto);
+            const enablementInfo = getVacationEnablementInfo(emp.fechaInicioContrato);
+            const periodsBreakdown = getVacationPeriodsBreakdown(vacCalc, diasGozados);
+
+            // HOJA 1: Resumen de Saldo del Trabajador
+            const headersResumen = [
+              [
+                "TRABAJADOR",
+                "DNI / PTP / CE",
+                "PUESTO",
+                "DEPARTAMENTO",
+                "FECHA INICIO CONTRATO",
+                "TIEMPO DE SERVICIO",
+                "PERÍODOS GANADOS CUMPLIDOS",
+                "PERÍODOS VENCIDOS",
+                "PERÍODO VIGENTE",
+                "DÍAS TOTALES ACUMULADOS",
+                "DÍAS GOZADOS",
+                "DÍAS ADELANTADOS",
+                "DÍAS DISPONIBLES SALDO",
+                "PRÓXIMA FECHA HABILITACIÓN"
+              ]
+            ];
+
+            const rowsResumen = [
+              [
+                emp.nombre,
+                emp.dni || '',
+                emp.puesto || '',
+                emp.departamento || '',
+                formatDate(emp.fechaInicioContrato),
+                vacCalc.antiguedadTexto,
+                vacCalc.years,
+                periodsBreakdown.periodoVencidosTexto,
+                periodsBreakdown.periodoVigenteTexto,
+                vacCalc.diasTotales,
+                diasGozados,
+                diasAdelantados,
+                diasDisponibles,
+                enablementInfo ? enablementInfo.fechaProximaHabilitacion : '--'
+              ]
+            ];
+
+            const wsResumen = XLSX.utils.aoa_to_sheet([...headersResumen, ...rowsResumen]);
+            wsResumen['!cols'] = [
+              { wch: 28 }, { wch: 14 }, { wch: 24 }, { wch: 20 }, { wch: 20 }, { wch: 22 }, { wch: 24 }, { wch: 36 }, { wch: 34 }, { wch: 22 }, { wch: 14 }, { wch: 16 }, { wch: 22 }, { wch: 24 }
+            ];
+            XLSX.utils.book_append_sheet(wb, wsResumen, "Resumen Saldo");
+
+            // HOJA 2: Detalle de Períodos Vacacionales (D.Leg. N° 713)
+            const headersPeriodos = [
+              [
+                "PERÍODO",
+                "FECHA INICIO PERÍODO",
+                "FECHA ADQUISICIÓN",
+                "PLAZO LÍMITE LEGAL GOCE",
+                "DÍAS DEL PERÍODO",
+                "DÍAS GOZADOS",
+                "DÍAS PENDIENTES",
+                "ESTADO DEL PERÍODO"
+              ]
+            ];
+
+            let diasGozadosRestantes = diasGozados;
+            const rowsPeriodos = (vacCalc.periodosDetalle || []).map(p => {
+              if (p.esVencido) {
+                if (diasGozadosRestantes >= 30) {
+                  diasGozadosRestantes -= 30;
+                  return [p.etiqueta, p.fechaInicioPer, p.fechaAdquisicion, p.fechaLimiteGoce, 30, 30, 0, "GOZADO"];
+                } else if (diasGozadosRestantes > 0) {
+                  const parcialGozado = diasGozadosRestantes;
+                  const parcialPendiente = 30 - parcialGozado;
+                  diasGozadosRestantes = 0;
+                  const estadoParcial = p.esExtemporaneo ? "GOCE PARCIAL - VENCIDO (EXTEMPORÁNEO)" : "GOCE PARCIAL - VIGENTE";
+                  return [p.etiqueta, p.fechaInicioPer, p.fechaAdquisicion, p.fechaLimiteGoce, 30, parcialGozado, parcialPendiente, estadoParcial];
+                } else {
+                  const estadoPendiente = p.esExtemporaneo ? "VENCIDO (EXTEMPORÁNEO ART. 23 D.LEG 713)" : "VIGENTE (DENTRO DE PLAZO)";
+                  return [p.etiqueta, p.fechaInicioPer, p.fechaAdquisicion, p.fechaLimiteGoce, 30, 0, 30, estadoPendiente];
+                }
+              } else {
+                const estadoCurso = diasAdelantados > 0 ? `EN CURSO (${diasAdelantados}d ADELANTADOS)` : "EN CURSO (ACUMULACIÓN PROPORCIONAL)";
+                return [p.etiqueta, p.fechaInicioPer, p.fechaAdquisicion, p.fechaLimiteGoce, p.dias, diasAdelantados, 0, estadoCurso];
+              }
+            });
+
+            const wsPeriodos = XLSX.utils.aoa_to_sheet([...headersPeriodos, ...rowsPeriodos]);
+            wsPeriodos['!cols'] = [
+              { wch: 34 }, { wch: 20 }, { wch: 20 }, { wch: 24 }, { wch: 18 }, { wch: 16 }, { wch: 18 }, { wch: 40 }
+            ];
+            XLSX.utils.book_append_sheet(wb, wsPeriodos, "Detalle Períodos");
+
+            // HOJA 3: Historial de Vacaciones del Trabajador
+            const headersHistorial = [
+              [
+                "TRABAJADOR",
+                "DNI / PTP / CE",
+                "PUESTO / CARGO",
+                "DEPARTAMENTO",
+                "TIPO DE REGISTRO",
+                "PERÍODO VACACIONAL AFECTADO",
+                "FECHA INICIO VACACIONES",
+                "FECHA FIN VACACIONES",
+                "DÍAS VACACIONES",
+                "ESTADO SOLICITUD",
+                "MOTIVO / OBSERVACIONES"
+              ]
+            ];
+
+            const rowsHistorial = empVacAll.map(v => [
+              emp.nombre,
+              emp.dni || '',
+              emp.puesto || '',
+              emp.departamento || '',
+              v.tipo || 'Solicitud Vacacional',
+              v.periodo || 'Ciclo General',
+              formatDate(v.fechaInicio),
+              formatDate(v.fechaFin),
+              parseInt(v.dias, 10) || 0,
+              v.estado || 'Aprobado',
+              v.motivo || ''
+            ]);
+
+            const wsHistorial = XLSX.utils.aoa_to_sheet([...headersHistorial, ...rowsHistorial]);
+            wsHistorial['!cols'] = [
+              { wch: 28 }, { wch: 14 }, { wch: 24 }, { wch: 20 }, { wch: 20 }, { wch: 30 }, { wch: 22 }, { wch: 22 }, { wch: 16 }, { wch: 18 }, { wch: 35 }
+            ];
+            XLSX.utils.book_append_sheet(wb, wsHistorial, "Historial Vacaciones");
+
+            const safeWorkerName = (emp.nombre || 'trabajador')
+              .normalize('NFD')
+              .replace(/[\u0300-\u036f]/g, '')
+              .toLowerCase()
+              .replace(/[^a-z0-9]+/g, '_')
+              .replace(/^_|_$/g, '');
+            const filename = `reporte_vacaciones_${safeWorkerName || 'trabajador'}_${fechaHoy}.xlsx`;
+
+            XLSX.writeFile(wb, filename);
+            showToast(`¡Reporte de vacaciones de ${emp.nombre} exportado en Excel!`, "success");
           }
 
           // EXPORT BACKUP FILE
@@ -2905,6 +3078,17 @@
             if (btnVac) btnVac.className = inactiveClass;
             if (btnTar) btnTar.className = inactiveClass;
             if (btnCes) btnCes.className = inactiveClass;
+
+            const exportBtn = document.getElementById('btn-export-active-module');
+            const exportBtnLabel = document.getElementById('btn-export-active-module-label');
+            if (exportBtnLabel) {
+              exportBtnLabel.textContent = tabName === 'vacations' ? 'Backup vacaciones' : 'Exportar Copia';
+            }
+            if (exportBtn) {
+              exportBtn.title = tabName === 'vacations'
+                ? 'Exportar backup completo de vacaciones (historial y saldos de todos los trabajadores) en Excel (.xlsx)'
+                : 'Exportar copia en formato de hoja de cálculo Excel (.xlsx) del módulo activo';
+            }
 
             if (tabName === 'employees') {
               if (modEmployees) modEmployees.classList.remove('hidden');
