@@ -327,13 +327,15 @@
         <!-- Action Buttons -->
         <div class="flex items-end gap-2.5 flex-wrap">
           <button type="button" id="btn-export-employee-vacation-report" onclick="exportCurrentEmployeeVacationReport()"
-            title="Descargar reporte de vacaciones en Excel (.xlsx) solo del trabajador actual"
-            class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 hover:text-white border border-blue-500/30 font-medium px-4 py-2.5 rounded-xl shadow-lg shadow-blue-600/10 transition duration-150 text-sm cursor-pointer">
-            <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            title="Descargar reporte visual en PDF del trabajador actual"
+            class="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 hover:text-white border border-rose-500/30 font-medium px-4 py-2.5 rounded-xl shadow-lg shadow-rose-600/10 transition duration-150 text-sm cursor-pointer">
+            <svg class="w-4 h-4 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 13h6m-6 4h4" />
             </svg>
-            <span>Reporte del Trabajador</span>
+            <span>Reporte PDF del Trabajador</span>
           </button>
 
           <button id="btn-open-vacation-modal"
@@ -1717,6 +1719,14 @@
           </div>
         </div>
 
+        <!-- CONTENEDOR OCULTO PARA REPORTE VISUAL PDF DEL TRABAJADOR (CONTROL DE VACACIONES) -->
+        <div id="vacation-worker-report-offscreen"
+          style="position: fixed; left: -12000px; top: 0; width: 1122px; pointer-events: none; z-index: -100;">
+          <div id="vacation-worker-report-printable" style="width: 1122px; background-color: #020617; color: #f1f5f9;">
+            <!-- Worker Vacation Visual Report Injected Dynamically -->
+          </div>
+        </div>
+
 
         <!-- JAVASCRIPT LOGIC WITH ROBUST VALIDATIONS & UNIVERSAL MULTI-BROWSER PERSISTENCE -->
         <script>
@@ -2314,10 +2324,10 @@
             }
           }
 
-          // EXPORT SINGLE-EMPLOYEE VACATION REPORT (CURRENTLY SELECTED WORKER)
+          // EXPORT SINGLE-EMPLOYEE VISUAL VACATION REPORT AS PDF (MATCHING SYSTEM UI)
           function exportCurrentEmployeeVacationReport() {
-            if (typeof XLSX === 'undefined') {
-              alert("Error: La librería XLSX no está cargada.");
+            if (typeof html2pdf === 'undefined') {
+              alert("Error: La librería html2pdf.js no está disponible en este momento.");
               return;
             }
 
@@ -2325,145 +2335,423 @@
             const emp = employees.find(e => Number(e.id) === selectedEmpId);
 
             if (!emp) {
-              alert("Por favor selecciona un trabajador en el módulo de vacaciones para generar su reporte.");
+              alert("Por favor selecciona un trabajador en el módulo de vacaciones para generar su reporte PDF.");
               return;
             }
 
-            const fechaHoy = new Date().toISOString().split('T')[0];
-            const wb = XLSX.utils.book_new();
+            const printableArea = document.getElementById('vacation-worker-report-printable');
+            if (!printableArea) return;
 
-            const vacCalc = calculateContractVacations(emp);
-            const empVacAll = vacations.filter(v => Number(v.employeeId) === Number(emp.id));
-            const empVacApproved = empVacAll.filter(v => v.estado === 'Aprobado' || !v.estado);
-            const diasGozados = empVacApproved.reduce((acc, curr) => acc + (parseInt(curr.dias, 10) || 0), 0);
-            const diasDisponibles = Math.max(0, vacCalc.diasVencidosCompleto - diasGozados);
-            const diasAdelantados = Math.max(0, diasGozados - vacCalc.diasVencidosCompleto);
+            const now = new Date();
+            const fechaHoyISO = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+            const fechaEmisionStr = formatDateObj(now);
+
+            const vacCalculated = calculateContractVacations(emp);
             const enablementInfo = getVacationEnablementInfo(emp.fechaInicioContrato);
-            const periodsBreakdown = getVacationPeriodsBreakdown(vacCalc, diasGozados);
 
-            // HOJA 1: Resumen de Saldo del Trabajador
-            const headersResumen = [
-              [
-                "TRABAJADOR",
-                "DNI / PTP / CE",
-                "PUESTO",
-                "DEPARTAMENTO",
-                "FECHA INICIO CONTRATO",
-                "TIEMPO DE SERVICIO",
-                "PERÍODOS GANADOS CUMPLIDOS",
-                "PERÍODOS VENCIDOS",
-                "PERÍODO VIGENTE",
-                "DÍAS TOTALES ACUMULADOS",
-                "DÍAS GOZADOS",
-                "DÍAS ADELANTADOS",
-                "DÍAS DISPONIBLES SALDO",
-                "PRÓXIMA FECHA HABILITACIÓN"
-              ]
-            ];
+            const empVacations = vacations.filter(v => Number(v.employeeId) === Number(emp.id));
+            const diasGozados = empVacations
+              .filter(v => v.estado === 'Aprobado' || !v.estado)
+              .reduce((sum, v) => sum + (parseInt(v.dias, 10) || 0), 0);
 
-            const rowsResumen = [
-              [
-                emp.nombre,
-                emp.dni || '',
-                emp.puesto || '',
-                emp.departamento || '',
-                formatDate(emp.fechaInicioContrato),
-                vacCalc.antiguedadTexto,
-                vacCalc.years,
-                periodsBreakdown.periodoVencidosTexto,
-                periodsBreakdown.periodoVigenteTexto,
-                vacCalc.diasTotales,
-                diasGozados,
-                diasAdelantados,
-                diasDisponibles,
-                enablementInfo ? enablementInfo.fechaProximaHabilitacion : '--'
-              ]
-            ];
+            const diasTotales = vacCalculated.diasTotales;
+            const diasDisponibles = Math.max(0, vacCalculated.diasVencidosCompleto - diasGozados);
+            const diasAdelantados = Math.max(0, diasGozados - vacCalculated.diasVencidosCompleto);
 
-            const wsResumen = XLSX.utils.aoa_to_sheet([...headersResumen, ...rowsResumen]);
-            wsResumen['!cols'] = [
-              { wch: 28 }, { wch: 14 }, { wch: 24 }, { wch: 20 }, { wch: 20 }, { wch: 22 }, { wch: 24 }, { wch: 36 }, { wch: 34 }, { wch: 22 }, { wch: 14 }, { wch: 16 }, { wch: 22 }, { wch: 24 }
-            ];
-            XLSX.utils.book_append_sheet(wb, wsResumen, "Resumen Saldo");
+            const periodosTotalesGanados = vacCalculated.years;
+            const periodosGozadosCompletos = Math.floor(diasGozados / 30);
+            const periodosVencidosPendientes = Math.max(0, periodosTotalesGanados - periodosGozadosCompletos);
 
-            // HOJA 2: Detalle de Períodos Vacacionales (D.Leg. N° 713)
-            const headersPeriodos = [
-              [
-                "PERÍODO",
-                "FECHA INICIO PERÍODO",
-                "FECHA ADQUISICIÓN",
-                "PLAZO LÍMITE LEGAL GOCE",
-                "DÍAS DEL PERÍODO",
-                "DÍAS GOZADOS",
-                "DÍAS PENDIENTES",
-                "ESTADO DEL PERÍODO"
-              ]
-            ];
+            const finDate = emp.fechaFinContrato ? parseLocalDate(emp.fechaFinContrato) : null;
+            const isFinPast = finDate && !isNaN(finDate.getTime()) && finDate < now;
 
-            let diasGozadosRestantes = diasGozados;
-            const rowsPeriodos = (vacCalc.periodosDetalle || []).map(p => {
-              if (p.esVencido) {
-                if (diasGozadosRestantes >= 30) {
-                  diasGozadosRestantes -= 30;
-                  return [p.etiqueta, p.fechaInicioPer, p.fechaAdquisicion, p.fechaLimiteGoce, 30, 30, 0, "GOZADO"];
-                } else if (diasGozadosRestantes > 0) {
-                  const parcialGozado = diasGozadosRestantes;
-                  const parcialPendiente = 30 - parcialGozado;
-                  diasGozadosRestantes = 0;
-                  const estadoParcial = p.esExtemporaneo ? "GOCE PARCIAL - VENCIDO (EXTEMPORÁNEO)" : "GOCE PARCIAL - VIGENTE";
-                  return [p.etiqueta, p.fechaInicioPer, p.fechaAdquisicion, p.fechaLimiteGoce, 30, parcialGozado, parcialPendiente, estadoParcial];
-                } else {
-                  const estadoPendiente = p.esExtemporaneo ? "VENCIDO (EXTEMPORÁNEO ART. 23 D.LEG 713)" : "VIGENTE (DENTRO DE PLAZO)";
-                  return [p.etiqueta, p.fechaInicioPer, p.fechaAdquisicion, p.fechaLimiteGoce, 30, 0, 30, estadoPendiente];
-                }
-              } else {
-                const estadoCurso = diasAdelantados > 0 ? `EN CURSO (${diasAdelantados}d ADELANTADOS)` : "EN CURSO (ACUMULACIÓN PROPORCIONAL)";
-                return [p.etiqueta, p.fechaInicioPer, p.fechaAdquisicion, p.fechaLimiteGoce, p.dias, diasAdelantados, 0, estadoCurso];
+            let finContratoHTML = '';
+            if (emp.esIndeterminado) {
+              finContratoHTML = `<span style="display:inline-block;padding:2px 8px;background:rgba(59,130,246,0.12);color:#60a5fa;border:1px solid rgba(59,130,246,0.28);border-radius:6px;font-weight:600;font-size:10px;">INDETERMINADO</span>`;
+            } else if (emp.fechaFinContrato) {
+              finContratoHTML = `<span style="color:#e2e8f0;font-weight:600;">${escapeHTML(formatDate(emp.fechaFinContrato))}</span>`;
+              if (isFinPast && emp.estado !== 'Cesado') {
+                finContratoHTML += ` <span style="display:inline-block;padding:1px 6px;background:rgba(245,158,11,0.18);color:#fcd34d;border:1px solid rgba(245,158,11,0.35);border-radius:4px;font-weight:700;font-size:10px;">Continuidad Activa</span>`;
               }
-            });
+            } else {
+              finContratoHTML = `<span style="color:#94a3b8;font-weight:500;">No especificada</span>`;
+            }
 
-            const wsPeriodos = XLSX.utils.aoa_to_sheet([...headersPeriodos, ...rowsPeriodos]);
-            wsPeriodos['!cols'] = [
-              { wch: 34 }, { wch: 20 }, { wch: 20 }, { wch: 24 }, { wch: 18 }, { wch: 16 }, { wch: 18 }, { wch: 40 }
-            ];
-            XLSX.utils.book_append_sheet(wb, wsPeriodos, "Detalle Períodos");
+            const rutaBadgeHTML = emp.ruta
+              ? `<span style="display:inline-block;padding:2px 8px;background:rgba(168,85,247,0.12);color:#d8b4fe;border:1px solid rgba(168,85,247,0.28);border-radius:6px;font-weight:500;font-size:11px;">Ruta: ${escapeHTML(emp.ruta)}</span>`
+              : '';
 
-            // HOJA 3: Historial de Vacaciones del Trabajador
-            const headersHistorial = [
-              [
-                "TRABAJADOR",
-                "DNI / PTP / CE",
-                "PUESTO / CARGO",
-                "DEPARTAMENTO",
-                "TIPO DE REGISTRO",
-                "PERÍODO VACACIONAL AFECTADO",
-                "FECHA INICIO VACACIONES",
-                "FECHA FIN VACACIONES",
-                "DÍAS VACACIONES",
-                "ESTADO SOLICITUD",
-                "MOTIVO / OBSERVACIONES"
-              ]
-            ];
+            const bannerHabilitacionTexto = periodosTotalesGanados > 0
+              ? `🏆 <strong>${periodosTotalesGanados} ${periodosTotalesGanados === 1 ? 'Período Ganado' : 'Períodos Ganados'}</strong> (${periodosTotalesGanados * 30} días ganados por ${periodosTotalesGanados} año(s) cumplidos)`
+              : `⏳ Habilitación primer año: <strong>${escapeHTML(enablementInfo.fechaProximaHabilitacion)}</strong> (${escapeHTML(enablementInfo.badgeTexto)})`;
 
-            const rowsHistorial = empVacAll.map(v => [
-              emp.nombre,
-              emp.dni || '',
-              emp.puesto || '',
-              emp.departamento || '',
-              v.tipo || 'Solicitud Vacacional',
-              v.periodo || 'Ciclo General',
-              formatDate(v.fechaInicio),
-              formatDate(v.fechaFin),
-              parseInt(v.dias, 10) || 0,
-              v.estado || 'Aprobado',
-              v.motivo || ''
-            ]);
+            const cardPeriodosMain = periodosTotalesGanados > 0
+              ? `${periodosTotalesGanados} ${periodosTotalesGanados === 1 ? 'Período Ganado' : 'Períodos Ganados'}`
+              : escapeHTML(enablementInfo.fechaProximaHabilitacion);
 
-            const wsHistorial = XLSX.utils.aoa_to_sheet([...headersHistorial, ...rowsHistorial]);
-            wsHistorial['!cols'] = [
-              { wch: 28 }, { wch: 14 }, { wch: 24 }, { wch: 20 }, { wch: 20 }, { wch: 30 }, { wch: 22 }, { wch: 22 }, { wch: 16 }, { wch: 18 }, { wch: 35 }
-            ];
-            XLSX.utils.book_append_sheet(wb, wsHistorial, "Historial Vacaciones");
+            const cardPeriodosSub = periodosTotalesGanados > 0
+              ? `${periodosTotalesGanados * 30} días por años cumplidos (${vacCalculated.diasTruncosEnCurso}d en curso)`
+              : escapeHTML(enablementInfo.subtextoCard || '--');
+
+            const cardAdelantoSub = diasAdelantados > 0
+              ? `${diasAdelantados}d tomados sin derecho vencido`
+              : '0d tomados por adelanto';
+            const cardAdelantoSubColor = diasAdelantados > 0 ? '#fcd34d' : '#94a3b8';
+
+            const disponiblesColor = diasDisponibles <= 3
+              ? '#fb7185'
+              : (diasDisponibles <= 7 ? '#fbbf24' : '#34d399');
+
+            // Period Chips HTML (Exact visual parity with Control de Vacaciones)
+            let chipsHTML = '';
+            let diasGozadosRestantes = diasGozados;
+            let countExtemporaneos = 0;
+
+            if (vacCalculated.periodosDetalle && vacCalculated.periodosDetalle.length > 0) {
+              vacCalculated.periodosDetalle.forEach(p => {
+                if (p.esVencido) {
+                  if (diasGozadosRestantes >= 30) {
+                    diasGozadosRestantes -= 30;
+                    chipsHTML += `
+                      <div style="display:flex;flex-direction:column;gap:4px;padding:10px 14px;background:rgba(2,44,34,0.75);border:1px solid rgba(6,95,70,0.75);border-radius:12px;font-size:12px;color:#6ee7b7;break-inside:avoid;">
+                        <div style="display:flex;align-items:center;gap:8px;font-weight:600;flex-wrap:wrap;">
+                          <span style="width:8px;height:8px;border-radius:9999px;background:#34d399;display:inline-block;flex-shrink:0;"></span>
+                          <span>${escapeHTML(p.etiqueta)}: <strong style="color:#a7f3d0;">30 días</strong></span>
+                          <span style="padding:2px 7px;background:rgba(16,185,129,0.22);color:#6ee7b7;font-size:10px;font-weight:700;border-radius:5px;">GOZADO</span>
+                        </div>
+                        <span style="font-size:11px;color:#94a3b8;padding-left:16px;">Ganado el ${escapeHTML(p.fechaAdquisicion)} (Descanso disfrutado)</span>
+                      </div>
+                    `;
+                  } else if (diasGozadosRestantes > 0) {
+                    const diasParcialesGozados = diasGozadosRestantes;
+                    const diasPendientesPeriodo = 30 - diasParcialesGozados;
+                    diasGozadosRestantes = 0;
+                    if (p.esExtemporaneo) countExtemporaneos++;
+
+                    const extraTag = p.esExtemporaneo
+                      ? `<span style="padding:2px 7px;background:rgba(244,63,94,0.28);color:#fecdd3;font-size:10px;font-weight:700;border-radius:5px;border:1px solid rgba(244,63,94,0.5);">VENCIDO</span>`
+                      : `<span style="padding:2px 7px;background:rgba(59,130,246,0.22);color:#93c5fd;font-size:10px;font-weight:700;border-radius:5px;">VIGENTE</span>`;
+
+                    chipsHTML += `
+                      <div style="display:flex;flex-direction:column;gap:4px;padding:10px 14px;background:rgba(69,26,3,0.75);border:1px solid rgba(146,64,14,0.75);border-radius:12px;font-size:12px;color:#fcd34d;break-inside:avoid;">
+                        <div style="display:flex;align-items:center;gap:8px;font-weight:600;flex-wrap:wrap;">
+                          <span style="width:8px;height:8px;border-radius:9999px;background:#fbbf24;display:inline-block;flex-shrink:0;"></span>
+                          <span>${escapeHTML(p.etiqueta)}: <strong style="color:#fde68a;">${diasPendientesPeriodo}d pendientes</strong> (${diasParcialesGozados}d gozados)</span>
+                          <span style="padding:2px 7px;background:rgba(245,158,11,0.22);color:#fcd34d;font-size:10px;font-weight:700;border-radius:5px;">GOCE PARCIAL</span>
+                          ${extraTag}
+                        </div>
+                        <span style="font-size:11px;color:#94a3b8;padding-left:16px;">Ganado el ${escapeHTML(p.fechaAdquisicion)} • Plazo Límite Legal D.Leg 713: <strong style="color:#e2e8f0;">${escapeHTML(p.fechaLimiteGoce)}</strong></span>
+                      </div>
+                    `;
+                  } else if (p.esExtemporaneo) {
+                    countExtemporaneos++;
+                    chipsHTML += `
+                      <div style="display:flex;flex-direction:column;gap:4px;padding:10px 14px;background:rgba(76,5,25,0.82);border:1px solid #9f1239;border-radius:12px;font-size:12px;color:#fda4af;break-inside:avoid;">
+                        <div style="display:flex;align-items:center;gap:8px;font-weight:600;flex-wrap:wrap;">
+                          <span style="width:8px;height:8px;border-radius:9999px;background:#f43f5e;display:inline-block;flex-shrink:0;"></span>
+                          <span>${escapeHTML(p.etiqueta)}: <strong style="color:#fecdd3;">30 días libres</strong></span>
+                          <span style="padding:2px 7px;background:rgba(244,63,94,0.32);color:#fecdd3;font-size:10px;font-weight:700;border-radius:5px;border:1px solid rgba(244,63,94,0.55);">⚠️ EXTEMPORÁNEO (VENCIDO ART. 23 D.LEG 713)</span>
+                        </div>
+                        <span style="font-size:11px;color:#fda4af;padding-left:16px;">¡Plazo Límite Legal Expiró el <strong style="color:#ffe4e6;">${escapeHTML(p.fechaLimiteGoce)}</strong>! (Riesgo de Indemnización Vacacional)</span>
+                      </div>
+                    `;
+                  } else {
+                    chipsHTML += `
+                      <div style="display:flex;flex-direction:column;gap:4px;padding:10px 14px;background:rgba(23,37,84,0.75);border:1px solid rgba(30,64,175,0.75);border-radius:12px;font-size:12px;color:#93c5fd;break-inside:avoid;">
+                        <div style="display:flex;align-items:center;gap:8px;font-weight:600;flex-wrap:wrap;">
+                          <span style="width:8px;height:8px;border-radius:9999px;background:#60a5fa;display:inline-block;flex-shrink:0;"></span>
+                          <span>${escapeHTML(p.etiqueta)}: <strong style="color:#bfdbfe;">30 días libres</strong></span>
+                          <span style="padding:2px 7px;background:rgba(59,130,246,0.22);color:#93c5fd;font-size:10px;font-weight:700;border-radius:5px;">VIGENTE (DENTRO DE PLAZO)</span>
+                        </div>
+                        <span style="font-size:11px;color:#94a3b8;padding-left:16px;">Ganado el ${escapeHTML(p.fechaAdquisicion)} • Plazo Límite Legal para salir: <strong style="color:#e2e8f0;">${escapeHTML(p.fechaLimiteGoce)}</strong></span>
+                      </div>
+                    `;
+                  }
+                } else {
+                  if (diasAdelantados > 0) {
+                    chipsHTML += `
+                      <div style="display:flex;flex-direction:column;gap:4px;padding:10px 14px;background:rgba(69,26,3,0.65);border:1px solid rgba(146,64,14,0.7);border-radius:12px;font-size:12px;color:#fcd34d;break-inside:avoid;">
+                        <div style="display:flex;align-items:center;gap:8px;font-weight:600;flex-wrap:wrap;">
+                          <span style="width:8px;height:8px;border-radius:9999px;background:#fbbf24;display:inline-block;flex-shrink:0;"></span>
+                          <span>${escapeHTML(p.etiqueta)}: <strong style="color:#fde68a;">${p.dias} días acumulados</strong> (${diasAdelantados}d tomados por adelanto)</span>
+                          <span style="padding:2px 7px;background:rgba(245,158,11,0.22);color:#fcd34d;font-size:10px;font-weight:700;border-radius:5px;border:1px solid rgba(245,158,11,0.35);">ADELANTO EN GOCE</span>
+                        </div>
+                        <span style="font-size:11px;color:#fde68a;opacity:0.85;padding-left:16px;">El trabajador está haciendo uso de <strong>${diasAdelantados} días adelantados</strong> sin haber completado aún este período de servicio.</span>
+                      </div>
+                    `;
+                  } else {
+                    chipsHTML += `
+                      <div style="display:flex;flex-direction:column;gap:4px;padding:10px 14px;background:rgba(30,41,59,0.85);border:1px solid #334155;border-radius:12px;font-size:12px;color:#cbd5e1;break-inside:avoid;">
+                        <div style="display:flex;align-items:center;gap:8px;font-weight:600;flex-wrap:wrap;">
+                          <span style="width:8px;height:8px;border-radius:9999px;background:#c084fc;display:inline-block;flex-shrink:0;"></span>
+                          <span>${escapeHTML(p.etiqueta)}: <strong style="color:#f8fafc;">${p.dias} días acumulados</strong></span>
+                          <span style="padding:2px 7px;background:rgba(168,85,247,0.22);color:#d8b4fe;font-size:10px;font-weight:700;border-radius:5px;">EN CURSO</span>
+                        </div>
+                        <span style="font-size:11px;color:#94a3b8;padding-left:16px;">Acumulación proporcional a 2.5 días/mes (Adquisición completa al ${escapeHTML(p.fechaAdquisicion)})</span>
+                      </div>
+                    `;
+                  }
+                }
+              });
+            }
+
+            const summaryBadgeHTML = countExtemporaneos > 0
+              ? `<span style="padding:4px 12px;background:rgba(244,63,94,0.22);color:#fda4af;border:1px solid rgba(244,63,94,0.4);border-radius:9999px;font-size:11px;font-weight:700;">⚠️ ${countExtemporaneos} Período(s) Extemporáneo(s) (Riesgo Art. 23 D.Leg 713)</span>`
+              : `<span style="padding:4px 12px;background:rgba(168,85,247,0.22);color:#d8b4fe;border:1px solid rgba(168,85,247,0.35);border-radius:9999px;font-size:11px;font-weight:700;">${periodosVencidosPendientes} Período(s) Vencido(s) Pendiente(s)</span>`;
+
+            // History Table Rows HTML
+            let historyContentHTML = '';
+            if (empVacations.length === 0) {
+              historyContentHTML = `
+                <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;text-align:center;">
+                  <div style="width:48px;height:48px;border-radius:9999px;background:rgba(30,41,59,0.7);display:flex;align-items:center;justify-content:center;color:#94a3b8;margin-bottom:10px;">
+                    <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <div style="font-size:14px;font-weight:600;color:#e2e8f0;">Sin historial de vacaciones</div>
+                  <div style="font-size:12px;color:#94a3b8;margin-top:4px;">Este empleado aún no tiene vacaciones registradas ni solicitudes pendientes.</div>
+                </div>
+              `;
+            } else {
+              const rowsHTML = empVacations.map(vac => {
+                const isPasada = vac.tipo === 'Pasadas';
+                const tipoBadge = isPasada
+                  ? `<span style="display:inline-block;padding:3px 9px;background:#1e293b;color:#cbd5e1;border-radius:7px;font-size:11px;font-weight:500;border:1px solid #334155;">Historial Pasado</span>`
+                  : `<span style="display:inline-block;padding:3px 9px;background:rgba(59,130,246,0.12);color:#60a5fa;border-radius:7px;font-size:11px;font-weight:500;border:1px solid rgba(59,130,246,0.28);">Nueva Solicitud</span>`;
+
+                const periodoBadge = `<div style="margin-top:5px;"><span style="display:inline-block;padding:2px 8px;background:rgba(168,85,247,0.12);color:#d8b4fe;border:1px solid rgba(168,85,247,0.28);border-radius:5px;font-weight:600;font-size:10px;">${escapeHTML(vac.periodo || 'Ciclo General')}</span></div>`;
+
+                const isApproved = vac.estado === 'Aprobado' || !vac.estado;
+                const estadoBadge = isApproved
+                  ? `<span style="display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:9999px;font-size:11px;font-weight:600;background:rgba(16,185,129,0.12);color:#34d399;border:1px solid rgba(16,185,129,0.28);"><span style="width:6px;height:6px;border-radius:9999px;background:#34d399;display:inline-block;"></span>Aprobado</span>`
+                  : `<span style="display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:9999px;font-size:11px;font-weight:600;background:rgba(245,158,11,0.12);color:#fbbf24;border:1px solid rgba(245,158,11,0.28);"><span style="width:6px;height:6px;border-radius:9999px;background:#fbbf24;display:inline-block;"></span>${escapeHTML(vac.estado)}</span>`;
+
+                const motivoHTML = vac.motivo
+                  ? escapeHTML(vac.motivo)
+                  : `<span style="font-style:italic;color:#64748b;">Sin observaciones</span>`;
+
+                return `
+                  <tr style="border-bottom:1px solid rgba(30,41,59,0.85);break-inside:avoid;">
+                    <td style="padding:11px 16px;vertical-align:middle;">
+                      ${tipoBadge}
+                      ${periodoBadge}
+                    </td>
+                    <td style="padding:11px 16px;vertical-align:middle;color:#e2e8f0;font-weight:500;white-space:nowrap;">
+                      ${escapeHTML(formatDate(vac.fechaInicio))} <span style="color:#64748b;margin:0 4px;">→</span> ${escapeHTML(formatDate(vac.fechaFin))}
+                    </td>
+                    <td style="padding:11px 16px;vertical-align:middle;text-align:center;font-weight:700;color:#34d399;font-size:14px;">
+                      ${parseInt(vac.dias, 10) || 0}
+                    </td>
+                    <td style="padding:11px 16px;vertical-align:middle;color:#cbd5e1;font-size:12px;">
+                      ${motivoHTML}
+                    </td>
+                    <td style="padding:11px 16px;vertical-align:middle;">
+                      ${estadoBadge}
+                    </td>
+                  </tr>
+                `;
+              }).join('');
+
+              historyContentHTML = `
+                <table style="width:100%;border-collapse:collapse;text-align:left;font-size:13px;">
+                  <thead>
+                    <tr style="background:rgba(2,6,23,0.75);border-bottom:1px solid #1e293b;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#94a3b8;">
+                      <th style="padding:11px 16px;">Tipo / Categoría</th>
+                      <th style="padding:11px 16px;">Período (Inicio - Fin)</th>
+                      <th style="padding:11px 16px;text-align:center;">Días</th>
+                      <th style="padding:11px 16px;">Motivo / Observaciones</th>
+                      <th style="padding:11px 16px;">Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${rowsHTML}
+                  </tbody>
+                </table>
+              `;
+            }
+
+            printableArea.innerHTML = `
+              <div style="width:1122px;min-height:792px;box-sizing:border-box;padding:24px 28px;background:#020617;color:#f1f5f9;font-family:'Inter',Arial,sans-serif;display:flex;flex-direction:column;gap:16px;">
+
+                <!-- Top System Header -->
+                <div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:14px;border-bottom:1px solid #1e293b;">
+                  <div style="display:flex;align-items:center;gap:12px;">
+                    <div style="width:40px;height:40px;border-radius:12px;background:#059669;display:flex;align-items:center;justify-content:center;color:#ffffff;box-shadow:0 4px 12px rgba(5,150,105,0.25);">
+                      <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <div style="font-size:18px;font-weight:700;color:#ffffff;letter-spacing:-0.01em;">Sistema de Gestión de RRHH — Control de Vacaciones</div>
+                      <div style="font-size:12px;color:#94a3b8;margin-top:2px;">Reporte Individual del Trabajador • Cumplimiento D.Leg. N° 713</div>
+                    </div>
+                  </div>
+                  <div style="text-align:right;font-size:11px;color:#94a3b8;">
+                    <div>Fecha de emisión: <strong style="color:#e2e8f0;">${escapeHTML(fechaEmisionStr)}</strong></div>
+                    <div style="margin-top:3px;">Próxima Habilitación: <strong style="color:#c084fc;">${escapeHTML(enablementInfo.fechaProximaHabilitacion)}</strong></div>
+                  </div>
+                </div>
+
+                <!-- Contract Info Banner (Matching UI Banner) -->
+                <div style="background:#0f172a;border:1px solid #1e293b;border-radius:16px;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:14px;break-inside:avoid;">
+                  <div style="display:flex;align-items:center;gap:12px;">
+                    <div style="width:38px;height:38px;border-radius:10px;background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.25);display:flex;align-items:center;justify-content:center;color:#60a5fa;flex-shrink:0;">
+                      <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                        <span style="font-size:15px;font-weight:700;color:#f8fafc;">${escapeHTML(emp.nombre)}</span>
+                        ${emp.dni ? `<span style="padding:2px 8px;background:#1e293b;color:#cbd5e1;border:1px solid #334155;border-radius:6px;font-size:11px;font-weight:600;">DNI: ${escapeHTML(emp.dni)}</span>` : ''}
+                        ${emp.puesto ? `<span style="padding:2px 8px;background:rgba(59,130,246,0.1);color:#93c5fd;border:1px solid rgba(59,130,246,0.22);border-radius:6px;font-size:11px;font-weight:500;">${escapeHTML(emp.puesto)}</span>` : ''}
+                        ${emp.departamento ? `<span style="padding:2px 8px;background:rgba(16,185,129,0.1);color:#6ee7b7;border:1px solid rgba(16,185,129,0.22);border-radius:6px;font-size:11px;font-weight:500;">${escapeHTML(emp.departamento)}</span>` : ''}
+                        ${rutaBadgeHTML}
+                      </div>
+                      <div style="font-size:12px;color:#94a3b8;margin-top:5px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                        <span>Inicio Contrato: <strong style="color:#e2e8f0;">${escapeHTML(formatDate(emp.fechaInicioContrato))}</strong></span>
+                        <span>•</span>
+                        <span>Fin: ${finContratoHTML}</span>
+                        <span>•</span>
+                        <span>Antigüedad: <strong style="color:#34d399;">${escapeHTML(vacCalculated.antiguedadTexto)}</strong></span>
+                      </div>
+                    </div>
+                  </div>
+                  <div style="background:rgba(59,7,100,0.65);border:1px solid rgba(107,33,168,0.6);padding:9px 14px;border-radius:12px;color:#e9d5ff;display:flex;align-items:center;gap:8px;font-size:12px;flex-shrink:0;">
+                    <svg width="16" height="16" fill="none" stroke="#c084fc" viewBox="0 0 24 24" style="flex-shrink:0;">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span style="color:#cbd5e1;">${bannerHabilitacionTexto}</span>
+                  </div>
+                </div>
+
+                <!-- 5 KPI Balance Cards (Exact 5-Column System Layout) -->
+                <div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;break-inside:avoid;">
+
+                  <!-- CARD 1: Días Totales Ganados -->
+                  <div style="background:#0f172a;border:1px solid #1e293b;border-radius:16px;padding:16px;display:flex;align-items:center;gap:12px;">
+                    <div style="width:42px;height:42px;border-radius:12px;background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.25);display:flex;align-items:center;justify-content:center;color:#60a5fa;flex-shrink:0;">
+                      <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <div style="min-width:0;">
+                      <div style="font-size:10px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;">Días Totales Ganados</div>
+                      <div style="display:flex;align-items:baseline;gap:4px;margin-top:3px;">
+                        <span style="font-size:22px;font-weight:700;color:#ffffff;line-height:1.1;">${diasTotales}</span>
+                        <span style="font-size:11px;color:#94a3b8;">días (2.5d/mes)</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- CARD 2: Períodos Ganados -->
+                  <div style="background:linear-gradient(135deg,rgba(59,7,100,0.35),#0f172a);border:1px solid rgba(88,28,135,0.6);border-radius:16px;padding:16px;display:flex;align-items:center;gap:12px;">
+                    <div style="width:42px;height:42px;border-radius:12px;background:rgba(168,85,247,0.12);border:1px solid rgba(168,85,247,0.28);display:flex;align-items:center;justify-content:center;color:#c084fc;flex-shrink:0;">
+                      <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                      </svg>
+                    </div>
+                    <div style="min-width:0;">
+                      <div style="font-size:10px;font-weight:700;color:#c084fc;text-transform:uppercase;letter-spacing:0.05em;">Períodos Ganados</div>
+                      <div style="font-size:16px;font-weight:700;color:#ffffff;margin-top:3px;line-height:1.2;">${cardPeriodosMain}</div>
+                      <div style="font-size:10px;color:#94a3b8;margin-top:3px;line-height:1.3;">${cardPeriodosSub}</div>
+                    </div>
+                  </div>
+
+                  <!-- CARD 3: Días Gozados -->
+                  <div style="background:#0f172a;border:1px solid #1e293b;border-radius:16px;padding:16px;display:flex;align-items:center;gap:12px;">
+                    <div style="width:42px;height:42px;border-radius:12px;background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.25);display:flex;align-items:center;justify-content:center;color:#fbbf24;flex-shrink:0;">
+                      <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <div style="min-width:0;">
+                      <div style="font-size:10px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;">Días Gozados</div>
+                      <div style="display:flex;align-items:baseline;gap:4px;margin-top:3px;">
+                        <span style="font-size:22px;font-weight:700;color:#fbbf24;line-height:1.1;">${diasGozados}</span>
+                        <span style="font-size:11px;color:#94a3b8;">días</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- CARD 4: Adelanto Vacaciones -->
+                  <div style="background:linear-gradient(135deg,rgba(69,26,3,0.3),#0f172a);border:1px solid rgba(120,53,15,0.5);border-radius:16px;padding:16px;display:flex;align-items:center;gap:12px;">
+                    <div style="width:42px;height:42px;border-radius:12px;background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.25);display:flex;align-items:center;justify-content:center;color:#fbbf24;flex-shrink:0;">
+                      <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                    </div>
+                    <div style="min-width:0;">
+                      <div style="font-size:10px;font-weight:700;color:#fbbf24;text-transform:uppercase;letter-spacing:0.05em;">Adelanto Vacaciones</div>
+                      <div style="display:flex;align-items:baseline;gap:4px;margin-top:3px;">
+                        <span style="font-size:22px;font-weight:700;color:#fbbf24;line-height:1.1;">${diasAdelantados}</span>
+                        <span style="font-size:11px;color:#94a3b8;">días</span>
+                      </div>
+                      <div style="font-size:10px;color:${cardAdelantoSubColor};margin-top:3px;font-weight:500;">${cardAdelantoSub}</div>
+                    </div>
+                  </div>
+
+                  <!-- CARD 5: Días Disponibles -->
+                  <div style="background:#0f172a;border:1px solid #1e293b;border-radius:16px;padding:16px;display:flex;align-items:center;gap:12px;">
+                    <div style="width:42px;height:42px;border-radius:12px;background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.25);display:flex;align-items:center;justify-content:center;color:#34d399;flex-shrink:0;">
+                      <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <div style="min-width:0;">
+                      <div style="font-size:10px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;">Días Disponibles</div>
+                      <div style="display:flex;align-items:baseline;gap:4px;margin-top:3px;">
+                        <span style="font-size:22px;font-weight:700;color:${disponiblesColor};line-height:1.1;">${diasDisponibles}</span>
+                        <span style="font-size:11px;color:#94a3b8;">días libres</span>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+
+                <!-- Annual Vacation Periods Breakdown Card -->
+                <div style="background:#0f172a;border:1px solid #1e293b;border-radius:16px;padding:16px 18px;display:flex;flex-direction:column;gap:12px;break-inside:avoid;">
+                  <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+                    <div style="font-size:12px;font-weight:700;color:#cbd5e1;text-transform:uppercase;letter-spacing:0.05em;display:flex;align-items:center;gap:8px;">
+                      <svg width="16" height="16" fill="none" stroke="#c084fc" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                      </svg>
+                      <span>Estado de Períodos Anuales Ganados (Derecho Adquirido por Año de Servicio)</span>
+                    </div>
+                    ${summaryBadgeHTML}
+                  </div>
+                  <div style="display:flex;flex-wrap:wrap;gap:10px;">
+                    ${chipsHTML || '<span style="font-size:12px;color:#94a3b8;">Sin períodos registrados</span>'}
+                  </div>
+                </div>
+
+                <!-- Vacations History Table Card -->
+                <div style="background:#0f172a;border:1px solid #1e293b;border-radius:16px;overflow:hidden;flex-grow:1;display:flex;flex-direction:column;">
+                  <div style="padding:14px 18px;border-bottom:1px solid #1e293b;display:flex;align-items:center;justify-content:space-between;">
+                    <div style="font-size:15px;font-weight:600;color:#ffffff;display:flex;align-items:center;gap:8px;">
+                      <svg width="18" height="18" fill="none" stroke="#34d399" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                      </svg>
+                      <span>Historial y Solicitudes de Vacaciones</span>
+                    </div>
+                    <span style="padding:3px 10px;background:#1e293b;color:#cbd5e1;font-size:11px;font-weight:600;border-radius:9999px;">
+                      ${empVacations.length} ${empVacations.length === 1 ? 'registro' : 'registros'}
+                    </span>
+                  </div>
+                  <div>
+                    ${historyContentHTML}
+                  </div>
+                </div>
+
+                <!-- Document Footer -->
+                <div style="display:flex;align-items:center;justify-content:space-between;padding-top:10px;border-top:1px solid #1e293b;font-size:11px;color:#64748b;">
+                  <span>Sistema de Gestión de RRHH • Reporte de Control de Vacaciones</span>
+                  <span>Trabajador: ${escapeHTML(emp.nombre)} • Emitido el ${escapeHTML(fechaEmisionStr)}</span>
+                </div>
+
+              </div>
+            `;
 
             const safeWorkerName = (emp.nombre || 'trabajador')
               .normalize('NFD')
@@ -2471,10 +2759,34 @@
               .toLowerCase()
               .replace(/[^a-z0-9]+/g, '_')
               .replace(/^_|_$/g, '');
-            const filename = `reporte_vacaciones_${safeWorkerName || 'trabajador'}_${fechaHoy}.xlsx`;
+            const filename = `reporte_vacaciones_${safeWorkerName || 'trabajador'}_${fechaHoyISO}.pdf`;
 
-            XLSX.writeFile(wb, filename);
-            showToast(`¡Reporte de vacaciones de ${emp.nombre} exportado en Excel!`, "success");
+            showToast(`Generando reporte PDF de ${emp.nombre}...`, "info");
+
+            setTimeout(() => {
+              const opt = {
+                margin: 0,
+                filename: filename,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: {
+                  scale: 2,
+                  useCORS: true,
+                  logging: false,
+                  scrollY: 0,
+                  backgroundColor: '#020617',
+                  windowWidth: 1122
+                },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' },
+                pagebreak: { mode: ['css', 'legacy'] }
+              };
+
+              html2pdf().set(opt).from(printableArea).save().then(() => {
+                showToast(`¡Reporte PDF de ${emp.nombre} descargado con éxito!`, "success");
+              }).catch(err => {
+                console.error("Error al generar reporte PDF del trabajador:", err);
+                showToast("No se pudo generar el reporte PDF en este navegador.", "error");
+              });
+            }, 120);
           }
 
           // EXPORT BACKUP FILE
